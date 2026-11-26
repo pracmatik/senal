@@ -26,12 +26,14 @@ jobs:
           N8N_RESUMIR_URL: ${{ secrets.N8N_RESUMIR_URL }}
           N8N_KEY: ${{ secrets.N8N_KEY }}
         run: node scripts/collect.mjs
+      - name: Crear canal de avisos
+        run: node scripts/feed.mjs
       - name: Comprobar que el fichero es válido
         run: node -e "const d=require('./data/news.json'); if(!Array.isArray(d.items)||!d.updated) process.exit(1); console.log('OK', d.items.length)"
       - name: Guardar cambios
         run: |
           git config user.name "neuro-avances-bot"
           git config user.email "neuro-avances-bot@users.noreply.github.com"
-          git add data/news.json
+          git add data/news.json data/avisos.xml
           git diff --cached --quiet || git commit -m "Noticias del $(date -u +%F)"
           git push

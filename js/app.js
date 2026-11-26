@@ -1,5 +1,8 @@
 import { initChat } from './chat.js';
 import { BASE_GLOSSARY } from './glossary.js';
+import { initDiario } from './diario.js?v=12';
+import { initGuia } from './guia-ui.js?v=12';
+import { isImportant } from './avisos-regla.js?v=12';
 
 const $ = (s, el = document) => el.querySelector(s);
 const store = {
@@ -219,15 +222,31 @@ function openFromHash() {
   else if (location.hash.length > 1) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
 }
 
+function renderAlerts() {
+  const since = new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10);
+  const list = (DATA.items || []).filter((x) => x.added >= since && isImportant(x))
+    .sort((a, b) => (b.added || '').localeCompare(a.added || '')).slice(0, 5);
+  $('#alerts').hidden = !list.length;
+  $('#alertList').innerHTML = list.map((x) => {
+    const fresh = lastVisit && x.added > lastVisit.slice(0, 10);
+    return `<li>${fresh ? '<span class="new-tag">Nuevo</span>' : ''}<a href="#n-${esc(x.id)}">${esc(x.title_es)}</a> <small>${fmtDate(x.added)}</small></li>`;
+  }).join('');
+  $('#alertList').onclick = (e) => {
+    const a = e.target.closest('a'); if (!a) return;
+    const li = document.getElementById(a.getAttribute('href').slice(1));
+    if (li) { e.preventDefault(); if (!li.classList.contains('open')) toggle(li); li.scrollIntoView({ block: 'center' }); }
+  };
+}
+
 async function load() {
   try {
     const r = await fetch(`data/news.json?v=${new Date().toISOString().slice(0, 13)}`);
     if (!r.ok) throw new Error(r.status);
     DATA = await r.json();
   } catch { DATA = { items: [], updated: null }; }
-  renderAll(); openFromHash();
+  renderAll(); renderAlerts(); openFromHash();
   store.set('lastVisit', new Date().toISOString());
 }
 
-initPrefs(); initTips(); initControls(); initNav(); initChat(); load();
-import('./nerve.js?v=9').then((m) => m.mountNerve($('#nerve'))).catch(() => {});
+initPrefs(); initTips(); initControls(); initNav(); initChat(); initDiario(); initGuia(); load();
+import('./nerve.js?v=12').then((m) => m.mountNerve($('#nerve'))).catch(() => {});

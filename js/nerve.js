@@ -12,12 +12,14 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const KEYS = [
   { z: 15, y: 0, ry: 0, rx: 0, x: 3.2, op: 1, grow: 0, speed: 1, thin: 0.85 },    // portada
   { z: 11.5, y: -2.6, ry: -0.28, rx: 0.12, x: 6, op: 0.24, grow: 0, speed: 0.8, thin: 1 }, // fibra pequeña
+  { z: 13, y: -1.6, ry: -0.1, rx: 0.06, x: 6, op: 0.16, grow: 0.1, speed: 0.6, thin: 1 },  // mi diario
+  { z: 14, y: -1.2, ry: 0.12, rx: 0, x: -5, op: 0.16, grow: 0.15, speed: 0.6, thin: 0.9 },  // guía
   { z: 12, y: -1, ry: 0.22, rx: -0.05, x: 6, op: 0.22, grow: 0.2, speed: 1.8, thin: 0.9 }, // ensayos
   { z: 10, y: -1.8, ry: 0.4, rx: 0.08, x: -4.5, op: 0.3, grow: 1, speed: 1.2, thin: 1 },   // células iPS
   { z: 22, y: 0.5, ry: -0.15, rx: 0, x: 4, op: 0.22, grow: 1, speed: 1.4, thin: 0.8 },      // sistema nervioso
   { z: 14, y: -0.5, ry: 0.1, rx: 0, x: 5, op: 0.2, grow: 1, speed: 1, thin: 0.8 },        // entender
 ];
-const SECTIONS = ['.hero', '#hoy', '#ensayos', '#ips', '#neuro', '#entender'];
+const SECTIONS = ['.hero', '#hoy', '#diario', '#guia', '#ensayos', '#ips', '#neuro', '#entender'];
 
 export function mountNerve(canvas) {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;

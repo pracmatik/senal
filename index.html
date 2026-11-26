@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/site.css?v=7">
+<link rel="stylesheet" href="css/site.css?v=12">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
 </head>
 <body>
@@ -26,6 +26,8 @@
   </a>
   <nav class="bar-nav" aria-label="Secciones">
     <a href="#hoy">Tu tema</a>
+    <a href="#diario">Mi diario</a>
+    <a href="#guia">Guía</a>
     <a href="#ensayos">Ensayos</a>
     <a href="#ips">Células iPS</a>
     <a href="#neuro">Sistema nervioso</a>
@@ -63,6 +65,13 @@
       <h2 id="hoy-title">Fibra pequeña y dolor neuropático</h2>
       <button class="info" data-tip="Aquí van primero las novedades de la polineuropatía de fibra pequeña y del dolor que nace en los nervios. Pulsa una noticia para leerla entera: qué se ha hecho, por qué importa y qué falta por demostrar.">i</button>
     </div>
+    <div class="alerts" id="alerts" hidden>
+      <div class="block-head"><h3>Avisos importantes</h3>
+        <button class="info" data-tip="Aquí salen solo las novedades que más pueden importarte: ensayos con centros en España o Europa y tratamientos aprobados o probados en estudios grandes. Si quieres recibirlos sin entrar en la web, copia el enlace del canal de avisos en una app de noticias como Feedly o Inoreader.">i</button>
+      </div>
+      <ul id="alertList"></ul>
+      <a class="feed" href="data/avisos.xml" id="feedLink">Enlace del canal de avisos</a>
+    </div>
     <div class="filters" role="toolbar" aria-label="Filtrar noticias">
       <button class="chip on" data-f="all">Todo</button>
       <button class="chip" data-f="sfn">Fibra pequeña</button>
@@ -80,6 +89,76 @@
     <p class="count" id="count" aria-live="polite"></p>
     <ol class="news" id="list-main"></ol>
     <button class="more" id="more-main" hidden>Ver más noticias</button>
+  </section>
+
+  <section class="block" id="diario" aria-labelledby="diario-title">
+    <div class="block-head">
+      <h2 id="diario-title">Mi diario</h2>
+      <button class="info" data-tip="Apunta cada día cómo estás. Con el tiempo verás si mejoras, qué te lo empeora y podrás enseñárselo a tu médico. Se guarda solo en este aparato: nadie más lo ve, ni siquiera nosotros. Si cambias de móvil u ordenador, usa Guardar copia y luego Recuperar copia en el nuevo.">i</button>
+    </div>
+    <p class="block-intro">Menos de un minuto al día. Se guarda solo en este aparato.</p>
+    <div class="diary">
+      <form class="d-form" id="dForm">
+        <div class="d-top">
+          <label class="d-date">Día <input type="date" name="date" required></label>
+          <div class="d-pain">
+            <label for="pain">Dolor de hoy</label>
+            <div class="d-pain-row"><input type="range" id="pain" name="pain" min="0" max="10" step="1" value="3"><output id="painNum">3</output></div>
+            <span id="painWord" class="d-word"></span>
+          </div>
+        </div>
+        <fieldset data-group="zones"><legend>Dónde</legend></fieldset>
+        <fieldset data-group="kinds"><legend>Cómo es</legend></fieldset>
+        <fieldset data-group="other"><legend>Otros síntomas</legend></fieldset>
+        <fieldset data-group="triggers"><legend>Qué lo ha empeorado</legend></fieldset>
+        <fieldset class="sleep"><legend>Cómo has dormido</legend>
+          <label class="pick"><input type="radio" name="sleep" value="bien"><span>Bien</span></label>
+          <label class="pick"><input type="radio" name="sleep" value="regular"><span>Regular</span></label>
+          <label class="pick"><input type="radio" name="sleep" value="mal"><span>Mal</span></label>
+        </fieldset>
+        <label class="d-note">Nota (opcional) <textarea name="note" rows="2" maxlength="300" placeholder="Por ejemplo: cambio de medicación, un día de mucho calor"></textarea></label>
+        <div class="d-actions"><button class="btn primary" id="dSave" type="submit">Guardar el día</button><span id="dMsg" role="status"></span></div>
+      </form>
+      <div class="d-side">
+        <h3>Tus últimos 30 días</h3>
+        <div id="dChart"></div>
+        <div id="dStats" class="d-stats"></div>
+        <ol class="d-list" id="dList"></ol>
+        <div class="d-copy">
+          <button class="chip" id="dExport" type="button">Guardar copia</button>
+          <label class="chip">Recuperar copia<input type="file" id="dImport" accept="application/json,.json" hidden></label>
+          <button class="info" data-tip="Guardar copia descarga un archivo con todo tu diario. Recuperar copia lo vuelve a cargar, por ejemplo en otro móvil u ordenador. Así no pierdes nada si borras el navegador.">i</button>
+        </div>
+      </div>
+    </div>
+    <div class="visit">
+      <div class="block-head">
+        <h3>Preparar la visita al médico</h3>
+        <button class="info" data-tip="Crea un resumen de una página con tu diario, las causas que ya te han mirado y las preguntas que eliges. Al pulsar el botón se abre la ventana de imprimir: puedes imprimirlo o elegir Guardar como PDF para llevarlo en el móvil.">i</button>
+      </div>
+      <div class="visit-grid">
+        <div>
+          <label class="v-field">Tu nombre, si quieres que salga <input id="vName" maxlength="80" autocomplete="name"></label>
+          <label class="v-field">Periodo <select id="vDays"><option value="30">Últimos 30 días</option><option value="90">Últimos 3 meses</option><option value="14">Últimas 2 semanas</option></select></label>
+          <label class="v-field">Tus propias preguntas, una por línea <textarea id="myQs" rows="4" maxlength="2000"></textarea></label>
+          <button class="btn primary" id="vPrint" type="button">Crear el resumen para imprimir o PDF</button>
+        </div>
+        <div>
+          <p class="v-lead">Marca las preguntas que quieres llevar:</p>
+          <div id="qList" class="q-list"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="guia" aria-labelledby="guia-title">
+    <div class="block-head">
+      <h2 id="guia-title">Guía práctica</h2>
+      <button class="info" data-tip="Lo que conviene saber si tienes fibra pequeña: qué causas se pueden descartar, qué pruebas hay, qué tratamientos existen hoy, consejos del día a día, dónde acudir en España y qué trámites puedes hacer. Todo revisado con fuentes médicas, enlazadas en cada punto.">i</button>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Partes de la guía" id="gTabs"></div>
+    <div id="gPanel" class="g-panel" role="tabpanel"></div>
+    <p class="g-note">Revisado el <span id="gDate"></span>. Esta guía informa; las decisiones sobre pruebas y tratamientos son siempre con tu médico.</p>
   </section>
 
   <section class="block" id="ensayos" aria-labelledby="ensayos-title">
@@ -197,8 +276,10 @@
   </form>
 </aside>
 
+<div id="informe" class="informe" aria-hidden="true"></div>
+
 <div class="tip" id="tip" role="tooltip" hidden></div>
 
-<script type="module" src="js/app.js?v=10"></script>
+<script type="module" src="js/app.js?v=12"></script>
 </body>
 </html>
