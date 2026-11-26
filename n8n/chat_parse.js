@@ -17,5 +17,5 @@ for (const o of res.output || []) {
 }
 text = text.replace(/\s*\(\[[^\]]*\]\([^)]*\)\)/g, '').replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '$1').replace(/\*\*/g, '').trim();
 if (!text) return [{ json: { ...fail, detail: 'sin texto' } }];
-const [answer, ...rest] = text.split('===MAS===');
+const [answer, ...rest] = text.split(/=+\s*MAS\s*=+/i);
 return [{ json: { blocked: false, answer: answer.trim(), more: rest.join(' ').trim(), sources: sources.slice(0, 8) } }];
