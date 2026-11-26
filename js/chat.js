@@ -20,6 +20,7 @@ export function initChat() {
   document.getElementById('chatClose').onclick = close;
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !chat.hidden) close(); });
   window.addEventListener('ask', (e) => open(e.detail));
+  log.querySelectorAll('.sugg button').forEach((b) => b.onclick = () => { input.value = b.textContent; form.requestSubmit(); });
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
 
   const add = (cls, html) => {

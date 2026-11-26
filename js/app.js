@@ -70,6 +70,7 @@ function renderMain() {
   el.innerHTML = list.slice(0, shown).map((x) => itemHTML(x)).join('') ||
     `<li class="empty">${filter === 'fav' ? 'Aún no has guardado ninguna noticia. Abre una y pulsa Guardar.' : 'No hay noticias que coincidan. Prueba con otra palabra.'}</li>`;
   $('#more-main').hidden = list.length <= shown;
+  $('#count').textContent = list.length ? `Mostrando ${Math.min(shown, list.length)} de ${list.length} noticias${q ? ` con ${query}` : ''}.` : '';
 }
 
 function renderList(sel, topics, max = 8) {
@@ -187,9 +188,35 @@ function initControls() {
   new IntersectionObserver(([e], o) => { if (e.isIntersecting) { $('.skin').classList.add('seen'); o.disconnect(); } }, { threshold: .4 }).observe($('.skin'));
 }
 
+// Barra de progreso, sección activa en el menú, botón de subir y atajo del buscador
+function initNav() {
+  const links = [...document.querySelectorAll('.bar-nav a')], bar = $('#progress'), top = $('#toTop');
+  const spy = new IntersectionObserver((es) => es.forEach((e) => {
+    if (!e.isIntersecting) return;
+    links.forEach((a) => { const on = a.getAttribute('href') === `#${e.target.id}`; a.classList.toggle('on', on); if (on) a.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
+  }), { rootMargin: '-45% 0px -50% 0px' });
+  links.forEach((a) => { const s = document.querySelector(a.getAttribute('href')); if (s) spy.observe(s); });
+  spy.observe($('.hero'));
+  let q = false;
+  const upd = () => {
+    q = false;
+    const max = document.documentElement.scrollHeight - innerHeight;
+    bar.style.setProperty('--p', max > 0 ? (scrollY / max).toFixed(4) : 0);
+    top.hidden = scrollY < innerHeight;
+  };
+  addEventListener('scroll', () => { if (!q) { q = true; requestAnimationFrame(upd); } }, { passive: true });
+  upd();
+  top.onclick = () => { scrollTo({ top: 0 }); $('.brand').focus({ preventScroll: true }); };
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== '/' || /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
+    e.preventDefault(); $('#q').scrollIntoView({ block: 'center' }); $('#q').focus({ preventScroll: true });
+  });
+}
+
 function openFromHash() {
   const li = location.hash.startsWith('#n-') && document.getElementById(decodeURIComponent(location.hash.slice(1)));
   if (li) { toggle(li); li.scrollIntoView({ block: 'center' }); }
+  else if (location.hash.length > 1) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
 }
 
 async function load() {
@@ -202,5 +229,5 @@ async function load() {
   store.set('lastVisit', new Date().toISOString());
 }
 
-initPrefs(); initTips(); initControls(); initChat(); load();
-import('./nerve.js?v=5').then((m) => m.mountNerve($('#nerve'))).catch(() => {});
+initPrefs(); initTips(); initControls(); initNav(); initChat(); load();
+import('./nerve.js?v=9').then((m) => m.mountNerve($('#nerve'))).catch(() => {});
