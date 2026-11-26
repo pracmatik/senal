@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Señal</title>
+<meta name="description" content="Novedades médicas sobre la polineuropatía de fibra pequeña, el dolor neuropático y el sistema nervioso, explicadas en palabras sencillas y actualizadas cada mañana.">
+<meta property="og:title" content="Señal, avances del sistema nervioso explicados en claro">
+<meta property="og:description" content="Cada mañana, lo nuevo sobre fibra pequeña, dolor neuropático y células iPS, sin jerga.">
+<meta name="theme-color" content="#EDF0EC">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M3 22c6 0 6-12 13-12s7 12 13 12' fill='none' stroke='%231F6F78' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='10' r='3.5' fill='%23D9A21B'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css?v=6">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+</head>
+<body>
+<a class="skip" href="#hoy">Saltar a las noticias</a>
+
+<header class="bar">
+  <a class="brand" href="#" aria-label="Señal, inicio">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 22c6 0 6-12 13-12s7 12 13 12"/><circle cx="16" cy="10" r="3.5"/></svg>
+    Señal
+  </a>
+  <nav class="bar-nav" aria-label="Secciones">
+    <a href="#hoy">Tu tema</a>
+    <a href="#ensayos">Ensayos</a>
+    <a href="#ips">Células iPS</a>
+    <a href="#neuro">Sistema nervioso</a>
+    <a href="#entender">Entender</a>
+  </nav>
+  <div class="bar-tools">
+    <button class="tool" id="fontBtn" aria-label="Cambiar tamaño de letra" title="Tamaño de letra"><span aria-hidden="true">A<small>A</small></span></button>
+    <button class="tool" id="themeBtn" aria-label="Cambiar entre modo claro y oscuro" title="Modo claro u oscuro">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9A7 7 0 0 1 12 3z"/></svg>
+    </button>
+    <button class="info" data-tip="Con la A cambias el tamaño de la letra. Con la luna pasas a fondo oscuro, más cómodo de noche. La web recuerda lo que elijas en este aparato.">i</button>
+  </div>
+</header>
+
+<section class="hero" aria-labelledby="hero-title">
+  <canvas id="nerve" aria-hidden="true"></canvas>
+  <div class="hero-text">
+    <p class="hero-date" id="heroDate">Cargando las novedades de hoy</p>
+    <h1 id="hero-title">Lo nuevo sobre la fibra pequeña y el dolor neuropático, contado en claro.</h1>
+    <p class="hero-sub">Cada mañana leemos estudios, ensayos y noticias médicas de todo el mundo y los resumimos sin jerga. Cada noticia dice qué se ha probado, en quién y qué falta todavía.</p>
+    <div class="hero-actions">
+      <a class="btn primary" href="#hoy">Ver lo de hoy</a>
+      <button class="btn" id="askHero">Hacer una pregunta</button>
+    </div>
+  </div>
+  <div class="hero-legend">
+    <button class="info" data-tip="El dibujo de fondo es una fibra nerviosa. La gruesa tiene una funda que deja saltar la señal de hueco en hueco, por eso va rápida. Las finas no tienen funda: son las fibras pequeñas, las que llevan el dolor y la temperatura. En la polineuropatía de fibra pequeña son estas las que se dañan; por eso algunas aparecen cortadas.">i</button>
+    <span>Qué estás viendo</span>
+  </div>
+</section>
+
+<main>
+  <section class="block" id="hoy" aria-labelledby="hoy-title">
+    <div class="block-head">
+      <h2 id="hoy-title">Fibra pequeña y dolor neuropático</h2>
+      <button class="info" data-tip="Aquí van primero las novedades de la polineuropatía de fibra pequeña y del dolor que nace en los nervios. Pulsa una noticia para leerla entera: qué se ha hecho, por qué importa y qué falta por demostrar.">i</button>
+    </div>
+    <div class="filters" role="toolbar" aria-label="Filtrar noticias">
+      <button class="chip on" data-f="all">Todo</button>
+      <button class="chip" data-f="sfn">Fibra pequeña</button>
+      <button class="chip" data-f="dolor">Dolor neuropático</button>
+      <button class="chip" data-f="fav">Guardadas</button>
+      <label class="search">
+        <span class="sr">Buscar en las noticias</span>
+        <input type="search" id="q" placeholder="Buscar, por ejemplo biopsia o inmunoglobulina">
+      </label>
+    </div>
+    <p class="scale-note">
+      Cada noticia lleva una barra que indica lo cerca que está del paciente.
+      <button class="info" data-tip="La barra tiene cuatro pasos. Laboratorio: probado en células. Animales: probado en ratones u otros animales. Personas: ya hay un ensayo con pacientes. Aprobado: las autoridades lo han autorizado. Cuanto más a la derecha, más cerca de la consulta. Si pone sin revisar, es un estudio que otros científicos aún no han comprobado.">i</button>
+    </p>
+    <ol class="news" id="list-main" aria-live="polite"></ol>
+    <button class="more" id="more-main" hidden>Ver más noticias</button>
+  </section>
+
+  <section class="block" id="ensayos" aria-labelledby="ensayos-title">
+    <div class="block-head">
+      <h2 id="ensayos-title">Ensayos que buscan voluntarios</h2>
+      <button class="info" data-tip="Un ensayo clínico es un estudio con pacientes para comprobar si un tratamiento funciona y es seguro. Estos están abiertos ahora mismo. Si te interesa alguno, enséñaselo a tu médico: él puede ver si encajas y cómo apuntarte.">i</button>
+    </div>
+    <p class="block-intro">Estudios abiertos ahora sobre fibra pequeña y dolor neuropático. Los que tienen centros en España o Europa aparecen marcados.</p>
+    <ol class="trials" id="list-trials"></ol>
+  </section>
+
+  <section class="block split" id="ips" aria-labelledby="ips-title">
+    <div class="block-side">
+      <div class="block-head">
+        <h2 id="ips-title">Reprogramar células</h2>
+        <button class="info" data-tip="En 2006 Shinya Yamanaka descubrió que con cuatro genes se puede devolver una célula adulta, por ejemplo de la piel, a un estado casi de embrión. A esas células se las llama iPS y pueden convertirse en neuronas u otros tejidos. Le dieron el Nobel en 2012.">i</button>
+      </div>
+      <p>Las células iPS permiten fabricar neuronas a partir de una muestra de piel o sangre del propio paciente. Sirven para estudiar la enfermedad en el laboratorio y, en algunos casos, ya se trasplantan en ensayos con personas.</p>
+      <p>Otra línea, la reprogramación parcial, intenta rejuvenecer células sin borrar lo que son. Casi todo está aún en animales.</p>
+    </div>
+    <ol class="news" id="list-ips"></ol>
+  </section>
+
+  <section class="block" id="neuro" aria-labelledby="neuro-title">
+    <div class="block-head">
+      <h2 id="neuro-title">Sistema nervioso y otros avances</h2>
+      <button class="info" data-tip="Novedades del resto del sistema nervioso, como alzhéimer, párkinson, ELA, esclerosis múltiple o lesiones de médula, y algunos avances médicos destacados de otros campos.">i</button>
+    </div>
+    <div class="cols">
+      <div>
+        <h3>Sistema nervioso</h3>
+        <ol class="news compact" id="list-neuro"></ol>
+      </div>
+      <div>
+        <h3>Otros campos</h3>
+        <ol class="news compact" id="list-otros"></ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="block entender" id="entender" aria-labelledby="entender-title">
+    <div class="block-head">
+      <h2 id="entender-title">Entender la fibra pequeña</h2>
+    </div>
+    <div class="explain">
+      <figure class="skin">
+        <svg viewBox="0 0 400 260" role="img" aria-labelledby="skin-cap">
+          <rect x="0" y="0" width="400" height="70" class="sk-epi"/>
+          <rect x="0" y="70" width="400" height="190" class="sk-der"/>
+          <path class="sk-nerve" d="M-10 220 C 80 200, 140 230, 210 205 S 330 190, 410 215"/>
+          <path class="sk-fib" d="M70 210 C 70 160, 60 110, 75 40"/>
+          <path class="sk-fib" d="M150 222 C 150 170, 165 120, 150 30"/>
+          <path class="sk-fib broken" d="M230 203 C 232 170, 228 140, 232 112"/>
+          <path class="sk-fib" d="M300 198 C 300 150, 315 100, 300 35"/>
+          <path class="sk-fib broken" d="M360 207 C 360 175, 356 150, 362 128"/>
+          <text x="12" y="28" class="sk-t">Piel</text>
+          <text x="12" y="98" class="sk-t">Capa de debajo</text>
+        </svg>
+        <figcaption id="skin-cap">Las fibras pequeñas suben hasta la superficie de la piel. Cuando se dañan, se acortan o desaparecen. Una biopsia de piel de 3 milímetros permite contarlas.</figcaption>
+      </figure>
+      <div class="explain-text">
+        <p>Los nervios tienen fibras gruesas y fibras finas. Las finas llevan el dolor, el calor, el frío y también controlan cosas automáticas como el sudor, el pulso o la digestión.</p>
+        <p>En la polineuropatía de fibra pequeña se dañan esas fibras finas. Por eso aparecen quemazón, hormigueo, pinchazos o dolor sin motivo, muchas veces en pies y manos, y a veces mareos o problemas de sudoración.</p>
+        <p>Las pruebas habituales de nervios miden sobre todo las fibras gruesas y pueden salir normales. Para verla hace falta una biopsia de piel u otras pruebas específicas.</p>
+        <p>A veces hay una causa que se puede tratar, como la diabetes, la falta de vitamina B12, un problema de tiroides o una enfermedad autoinmune. Otras veces no se encuentra y se habla de causa desconocida.</p>
+      </div>
+    </div>
+    <div class="glossary">
+      <div class="block-head">
+        <h3>Palabras que salen a menudo</h3>
+        <button class="info" data-tip="Un pequeño diccionario. Se amplía solo con las palabras difíciles que aparecen en las noticias de cada día.">i</button>
+      </div>
+      <dl id="glossary"></dl>
+    </div>
+  </section>
+
+  <section class="block about" aria-labelledby="about-title">
+    <h2 id="about-title">Cómo se hace esta página</h2>
+    <p>Cada mañana un programa revisa PubMed, Europe PMC, ClinicalTrials.gov, ScienceDaily y Medical Xpress. Una inteligencia artificial resume cada estudio en castellano llano, usando solo lo que dice el texto original, y lo clasifica según lo cerca que está del paciente. Cada resumen enlaza con su fuente para que puedas comprobarlo.</p>
+    <p class="warn">Esta web informa, no da consejo médico. Los resúmenes son automáticos y pueden tener errores. No cambies ni dejes ningún tratamiento sin hablarlo con tu médico. Si tienes una urgencia, llama al 112.</p>
+    <p class="status" id="status"></p>
+  </section>
+</main>
+
+<button class="ask-fab" id="askFab" aria-controls="chat" aria-expanded="false">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>
+  Pregunta
+</button>
+
+<aside class="chat" id="chat" aria-label="Preguntas" hidden>
+  <div class="chat-head">
+    <strong>Pregunta lo que quieras</strong>
+    <button class="info" data-tip="Escribe una duda sobre la fibra pequeña, el dolor neuropático o cualquier avance médico. Antes de contestar busca en fuentes médicas fiables y actuales, y te dice de dónde ha sacado cada cosa. Responde corto; si quieres más, pulsa Ampliar. No sustituye a tu médico.">i</button>
+    <button class="chat-close" id="chatClose" aria-label="Cerrar preguntas">×</button>
+  </div>
+  <div class="chat-log" id="chatLog" aria-live="polite">
+    <p class="chat-hint">Por ejemplo: ¿Qué es la suzetrigina? ¿Hay tratamientos nuevos para la fibra pequeña? ¿Qué pruebas confirman el diagnóstico?</p>
+  </div>
+  <form class="chat-form" id="chatForm">
+    <label class="sr" for="chatInput">Tu pregunta</label>
+    <textarea id="chatInput" rows="2" maxlength="600" placeholder="Escribe tu pregunta" required></textarea>
+    <input class="hp" name="web" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <button class="btn primary" type="submit">Enviar</button>
+  </form>
+</aside>
+
+<div class="tip" id="tip" role="tooltip" hidden></div>
+
+<script type="module" src="js/app.js?v=6"></script>
+</body>
+</html>

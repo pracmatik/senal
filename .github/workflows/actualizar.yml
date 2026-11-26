@@ -1,0 +1,37 @@
+name: Actualizar noticias
+
+on:
+  schedule:
+    - cron: '15 4 * * *'   # 05:15 en invierno y 06:15 en verano, hora de Madrid
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: actualizar
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Recoger y resumir
+        env:
+          N8N_RESUMIR_URL: ${{ secrets.N8N_RESUMIR_URL }}
+          N8N_KEY: ${{ secrets.N8N_KEY }}
+        run: node scripts/collect.mjs
+      - name: Comprobar que el fichero es válido
+        run: node -e "const d=require('./data/news.json'); if(!Array.isArray(d.items)||!d.updated) process.exit(1); console.log('OK', d.items.length)"
+      - name: Guardar cambios
+        run: |
+          git config user.name "neuro-avances-bot"
+          git config user.email "neuro-avances-bot@users.noreply.github.com"
+          git add data/news.json
+          git diff --cached --quiet || git commit -m "Noticias del $(date -u +%F)"
+          git push
