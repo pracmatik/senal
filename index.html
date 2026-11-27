@@ -7,31 +7,30 @@
 <meta name="description" content="Novedades médicas sobre la polineuropatía de fibra pequeña, el dolor neuropático y el sistema nervioso, explicadas en palabras sencillas y actualizadas cada mañana.">
 <meta property="og:title" content="Señal, avances del sistema nervioso explicados en claro">
 <meta property="og:description" content="Cada mañana, lo nuevo sobre fibra pequeña, dolor neuropático y células iPS, sin jerga.">
-<meta name="theme-color" content="#EDF0EC">
+<meta name="theme-color" content="#F5F3F9">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M3 22c6 0 6-12 13-12s7 12 13 12' fill='none' stroke='%231F6F78' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='10' r='3.5' fill='%23D9A21B'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/site.css?v=12">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css?v=14">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" crossorigin>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
 </head>
 <body>
-<a class="skip" href="#hoy">Saltar a las noticias</a>
+<a class="skip" href="#main">Saltar al contenido</a>
 <canvas id="nerve" aria-hidden="true"></canvas>
 
 <header class="bar">
-  <a class="brand" href="#" aria-label="Señal, inicio">
+  <a class="brand" href="#inicio" aria-label="Señal, inicio">
     <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 22c6 0 6-12 13-12s7 12 13 12"/><circle cx="16" cy="10" r="3.5"/></svg>
     Señal
   </a>
   <nav class="bar-nav" aria-label="Secciones">
-    <a href="#hoy">Tu tema</a>
+    <a href="#inicio">Hoy</a>
+    <a href="#rutina">Mi rutina</a>
     <a href="#diario">Mi diario</a>
-    <a href="#guia">Guía</a>
-    <a href="#ensayos">Ensayos</a>
-    <a href="#ips">Células iPS</a>
-    <a href="#neuro">Sistema nervioso</a>
-    <a href="#entender">Entender</a>
+    <a href="#hoy">Noticias</a>
+    <a href="#guia">Aprender</a>
   </nav>
   <div class="bar-tools">
     <button class="tool" id="fontBtn" aria-label="Cambiar tamaño de letra" title="Tamaño de letra"><span aria-hidden="true">A<small>A</small></span></button>
@@ -43,34 +42,108 @@
   <span class="progress" id="progress" aria-hidden="true"></span>
 </header>
 
-<section class="hero" aria-labelledby="hero-title">
-  <div class="hero-text">
-    <p class="hero-date" id="heroDate">Cargando las novedades de hoy</p>
-    <h1 id="hero-title">Lo nuevo sobre la fibra pequeña y el dolor neuropático, contado en claro.</h1>
-    <p class="hero-sub">Cada mañana leemos estudios, ensayos y noticias médicas de todo el mundo y los resumimos sin jerga. Cada noticia dice qué se ha probado, en quién y qué falta todavía.</p>
-    <div class="hero-actions">
-      <a class="btn primary" href="#hoy">Ver lo de hoy</a>
-      <button class="btn" id="askHero">Hacer una pregunta</button>
-    </div>
-  </div>
-  <div class="hero-legend">
-    <button class="info" data-tip="El dibujo de fondo es una fibra nerviosa. La gruesa tiene una funda que deja saltar la señal de hueco en hueco, por eso va rápida. Las finas no tienen funda: son las fibras pequeñas, las que llevan el dolor y la temperatura. En la polineuropatía de fibra pequeña son estas las que se dañan; por eso algunas aparecen cortadas. Al bajar por la página el dibujo te acompaña: se acerca a las fibras dañadas y, en el apartado de células iPS, las cortadas vuelven a crecer, que es lo que busca la investigación.">i</button>
-    <span>Qué estás viendo</span>
-  </div>
-</section>
 
-<main>
-  <section class="block" id="hoy" aria-labelledby="hoy-title">
-    <div class="block-head">
-      <h2 id="hoy-title">Fibra pequeña y dolor neuropático</h2>
-      <button class="info" data-tip="Aquí van primero las novedades de la polineuropatía de fibra pequeña y del dolor que nace en los nervios. Pulsa una noticia para leerla entera: qué se ha hecho, por qué importa y qué falta por demostrar.">i</button>
+
+<main id="main">
+<section class="view" data-view id="inicio" aria-labelledby="hello">
+  <div class="hello">
+    <div class="hello-text">
+      <p class="hello-date" id="todayDate"></p>
+      <h1 id="hello"><span id="helloWord">Hola</span>, Christian</h1>
+      <p class="hello-q" id="moodQ">¿Cómo te encuentras hoy?</p>
+      <div class="moods" id="moods" role="radiogroup" aria-labelledby="moodQ"></div>
+      <p class="mood-reply" id="moodReply" aria-live="polite"></p>
     </div>
-    <div class="alerts" id="alerts" hidden>
+    <div class="hello-stage">
+      <div class="hello-fig" data-fig="saludo"></div>
+      <p class="hello-hint">Este eres tú. Arrástrame para girarme.</p>
+    </div>
+  </div>
+
+  <div class="home-grid">
+    <article class="card c-rutina">
+      <div class="card-head"><h2>Tu rutina de hoy</h2><span class="pill" id="homeTheme"></span></div>
+      <p class="c-big" id="homeRutina">Preparando tu rutina</p>
+      <div class="mini-figs" id="homeFigs"></div>
+      <div class="card-actions">
+        <button class="btn primary" type="button" data-start>Empezar ahora</button>
+        <a class="btn ghost" href="#rutina">Ver y cambiar el tiempo</a>
+      </div>
+    </article>
+
+    <article class="card c-tip">
+      <div class="card-head"><h2>Consejo del día</h2><span class="pill" id="tipKind"></span></div>
+      <p class="c-tip-text" id="todayTip"></p>
+      <p class="g-src" id="todayTipSrc"></p>
+      <button class="chip" type="button" id="tipNext">Otro consejo</button>
+    </article>
+
+    <article class="card c-news">
+      <div class="card-head"><h2>Lo último de tu tema</h2></div>
+      <div class="alerts" id="alerts" hidden>
       <div class="block-head"><h3>Avisos importantes</h3>
         <button class="info" data-tip="Aquí salen solo las novedades que más pueden importarte: ensayos con centros en España o Europa y tratamientos aprobados o probados en estudios grandes. Si quieres recibirlos sin entrar en la web, copia el enlace del canal de avisos en una app de noticias como Feedly o Inoreader.">i</button>
       </div>
       <ul id="alertList"></ul>
       <a class="feed" href="data/avisos.xml" id="feedLink">Enlace del canal de avisos</a>
+    </div>
+      <ol class="mini-news" id="homeNews"></ol>
+      <p class="c-foot"><span id="heroDate">Cargando las novedades de hoy</span> <a href="#hoy">Ver todas</a></p>
+    </article>
+
+    <article class="card c-diary">
+      <div class="card-head"><h2>Tu diario</h2></div>
+      <p id="homeDiary">Apunta en un minuto cómo estás hoy. Con los días verás qué te ayuda.</p>
+      <div class="card-actions"><a class="btn" href="#diario">Apuntar hoy</a><button class="btn ghost" type="button" id="askHero">Hacer una pregunta</button></div>
+    </article>
+  </div>
+</section>
+
+<section class="view" data-view id="rutina" aria-labelledby="rutina-title" hidden>
+  <div class="view-head">
+    <h2 id="rutina-title">Tu rutina de hoy</h2>
+    <button class="info" data-tip="Cada día te propongo ejercicios distintos según el tiempo que tengas y cómo te encuentres. Casi todos son sentado o tumbado para no cargar los pies. Pulsa un muñeco y arrástralo para verlo desde otro lado. La parte que trabaja brilla en naranja y la sombra naranja marca hasta dónde llegar.">i</button>
+  </div>
+  <p class="view-intro" id="rTheme"></p>
+  <div class="r-top">
+    <div class="card r-time">
+      <label class="r-q" for="rMin">¿Cuánto tiempo tienes hoy?</label>
+      <div class="stepper">
+        <button type="button" id="rLess" aria-label="5 minutos menos">−</button>
+        <input id="rMin" type="number" inputmode="numeric" min="5" max="60" step="5" value="15" aria-describedby="rSummary">
+        <span class="unit">min</span>
+        <button type="button" id="rMore" aria-label="5 minutos más">+</button>
+      </div>
+      <div class="r-chips"><button class="chip" type="button" data-min="5">5</button><button class="chip" type="button" data-min="10">10</button><button class="chip" type="button" data-min="15">15</button><button class="chip" type="button" data-min="20">20</button><button class="chip" type="button" data-min="30">30</button></div>
+      <p class="r-sum" id="rSummary"></p>
+      <p class="r-pace" id="rPace" hidden>Ayer acabaste peor, así que hoy te propongo un poco menos de tiempo.</p>
+      <button class="btn primary big" type="button" data-start>Empezar la rutina</button>
+    </div>
+    <div class="card r-prog">
+      <h3>Tu semana</h3>
+      <div class="r-prog-in">
+        <div class="ring" id="rRing" aria-hidden="true"><span>150<small>min meta</small></span></div>
+        <div id="rWeek" class="r-week"></div>
+      </div>
+      <p id="rStats" class="r-stats"></p>
+    </div>
+  </div>
+  <p class="r-msg" id="rMsg" role="status"></p>
+  <ol class="r-list" id="rList"></ol>
+  <details class="card r-safety">
+    <summary>Para hacerlo con seguridad</summary>
+    <p>Para y descansa si notas dolor en el pecho, mareo, mucha falta de aire o un dolor nuevo y punzante. Si te pasa, avisa a tu médico.</p>
+    <p>Mírate los pies al acabar. Con la neuropatía puedes no notar una rozadura o una ampolla. Usa calcetines con suela o un calzado cómodo.</p>
+    <p>Si al día siguiente estás peor, márcalo al terminar: la rutina baja sola el tiempo. Lo poco cuenta.</p>
+    <p class="r-ev">Estos ejercicios vienen de estudios en neuropatía diabética y de guías generales de salud. Aún no hay ensayos solo de fibra pequeña.</p>
+  </details>
+</section>
+
+<div class="view" data-view id="noticias" hidden>
+  <section class="block" id="hoy" aria-labelledby="hoy-title">
+    <div class="block-head">
+      <h2 id="hoy-title">Fibra pequeña y dolor neuropático</h2>
+      <button class="info" data-tip="Aquí van primero las novedades de la polineuropatía de fibra pequeña y del dolor que nace en los nervios. Pulsa una noticia para leerla entera: qué se ha hecho, por qué importa y qué falta por demostrar.">i</button>
     </div>
     <div class="filters" role="toolbar" aria-label="Filtrar noticias">
       <button class="chip on" data-f="all">Todo</button>
@@ -90,7 +163,49 @@
     <ol class="news" id="list-main"></ol>
     <button class="more" id="more-main" hidden>Ver más noticias</button>
   </section>
-
+  <section class="block" id="ensayos" aria-labelledby="ensayos-title">
+    <div class="block-head">
+      <h2 id="ensayos-title">Ensayos que buscan voluntarios</h2>
+      <button class="info" data-tip="Un ensayo clínico es un estudio con pacientes para comprobar si un tratamiento funciona y es seguro. Estos están abiertos ahora mismo. Si te interesa alguno, enséñaselo a tu médico: él puede ver si encajas y cómo apuntarte.">i</button>
+    </div>
+    <p class="block-intro">Estudios abiertos ahora sobre fibra pequeña y dolor neuropático. Los que tienen centros en España o Europa aparecen marcados.</p>
+    <ol class="trials" id="list-trials"></ol>
+  </section>
+  <section class="block split" id="ips" aria-labelledby="ips-title">
+    <div class="block-side">
+      <div class="block-head">
+        <h2 id="ips-title">Reprogramar células</h2>
+        <button class="info" data-tip="En 2006 Shinya Yamanaka descubrió que con cuatro genes se puede devolver una célula adulta, por ejemplo de la piel, a un estado casi de embrión. A esas células se las llama iPS y pueden convertirse en neuronas u otros tejidos. Le dieron el Nobel en 2012.">i</button>
+      </div>
+      <p>Las células iPS permiten fabricar neuronas a partir de una muestra de piel o sangre del propio paciente. Sirven para estudiar la enfermedad en el laboratorio y, en algunos casos, ya se trasplantan en ensayos con personas.</p>
+      <p>Otra línea, la reprogramación parcial, intenta rejuvenecer células sin borrar lo que son. Casi todo está aún en animales.</p>
+    </div>
+    <ol class="news" id="list-ips"></ol>
+  </section>
+  <section class="block" id="neuro" aria-labelledby="neuro-title">
+    <div class="block-head">
+      <h2 id="neuro-title">Sistema nervioso y otros avances</h2>
+      <button class="info" data-tip="Novedades del resto del sistema nervioso, como alzhéimer, párkinson, ELA, esclerosis múltiple o lesiones de médula, y algunos avances médicos destacados de otros campos.">i</button>
+    </div>
+    <div class="cols">
+      <div>
+        <h3>Sistema nervioso</h3>
+        <ol class="news compact" id="list-neuro"></ol>
+      </div>
+      <div>
+        <h3>Otros campos</h3>
+        <ol class="news compact" id="list-otros"></ol>
+      </div>
+    </div>
+  </section>
+  <section class="block about" aria-labelledby="about-title">
+    <h2 id="about-title">Cómo se hace esta página</h2>
+    <p>Cada mañana un programa revisa PubMed, Europe PMC, ClinicalTrials.gov, ScienceDaily y Medical Xpress. Una inteligencia artificial resume cada estudio en castellano llano, usando solo lo que dice el texto original, y lo clasifica según lo cerca que está del paciente. Cada resumen enlaza con su fuente para que puedas comprobarlo.</p>
+    <p class="warn">Esta web informa, no da consejo médico. Los resúmenes son automáticos y pueden tener errores. No cambies ni dejes ningún tratamiento sin hablarlo con tu médico. Si tienes una urgencia, llama al 112.</p>
+    <p class="status" id="status"></p>
+  </section>
+</div>
+<div class="view" data-view id="v-diario" hidden>
   <section class="block" id="diario" aria-labelledby="diario-title">
     <div class="block-head">
       <h2 id="diario-title">Mi diario</h2>
@@ -150,7 +265,8 @@
       </div>
     </div>
   </section>
-
+</div>
+<div class="view" data-view id="aprender" hidden>
   <section class="block" id="guia" aria-labelledby="guia-title">
     <div class="block-head">
       <h2 id="guia-title">Guía práctica</h2>
@@ -160,45 +276,6 @@
     <div id="gPanel" class="g-panel" role="tabpanel"></div>
     <p class="g-note">Revisado el <span id="gDate"></span>. Esta guía informa; las decisiones sobre pruebas y tratamientos son siempre con tu médico.</p>
   </section>
-
-  <section class="block" id="ensayos" aria-labelledby="ensayos-title">
-    <div class="block-head">
-      <h2 id="ensayos-title">Ensayos que buscan voluntarios</h2>
-      <button class="info" data-tip="Un ensayo clínico es un estudio con pacientes para comprobar si un tratamiento funciona y es seguro. Estos están abiertos ahora mismo. Si te interesa alguno, enséñaselo a tu médico: él puede ver si encajas y cómo apuntarte.">i</button>
-    </div>
-    <p class="block-intro">Estudios abiertos ahora sobre fibra pequeña y dolor neuropático. Los que tienen centros en España o Europa aparecen marcados.</p>
-    <ol class="trials" id="list-trials"></ol>
-  </section>
-
-  <section class="block split" id="ips" aria-labelledby="ips-title">
-    <div class="block-side">
-      <div class="block-head">
-        <h2 id="ips-title">Reprogramar células</h2>
-        <button class="info" data-tip="En 2006 Shinya Yamanaka descubrió que con cuatro genes se puede devolver una célula adulta, por ejemplo de la piel, a un estado casi de embrión. A esas células se las llama iPS y pueden convertirse en neuronas u otros tejidos. Le dieron el Nobel en 2012.">i</button>
-      </div>
-      <p>Las células iPS permiten fabricar neuronas a partir de una muestra de piel o sangre del propio paciente. Sirven para estudiar la enfermedad en el laboratorio y, en algunos casos, ya se trasplantan en ensayos con personas.</p>
-      <p>Otra línea, la reprogramación parcial, intenta rejuvenecer células sin borrar lo que son. Casi todo está aún en animales.</p>
-    </div>
-    <ol class="news" id="list-ips"></ol>
-  </section>
-
-  <section class="block" id="neuro" aria-labelledby="neuro-title">
-    <div class="block-head">
-      <h2 id="neuro-title">Sistema nervioso y otros avances</h2>
-      <button class="info" data-tip="Novedades del resto del sistema nervioso, como alzhéimer, párkinson, ELA, esclerosis múltiple o lesiones de médula, y algunos avances médicos destacados de otros campos.">i</button>
-    </div>
-    <div class="cols">
-      <div>
-        <h3>Sistema nervioso</h3>
-        <ol class="news compact" id="list-neuro"></ol>
-      </div>
-      <div>
-        <h3>Otros campos</h3>
-        <ol class="news compact" id="list-otros"></ol>
-      </div>
-    </div>
-  </section>
-
   <section class="block entender" id="entender" aria-labelledby="entender-title">
     <div class="block-head">
       <h2 id="entender-title">Entender la fibra pequeña</h2>
@@ -234,13 +311,7 @@
       <dl id="glossary"></dl>
     </div>
   </section>
-
-  <section class="block about" aria-labelledby="about-title">
-    <h2 id="about-title">Cómo se hace esta página</h2>
-    <p>Cada mañana un programa revisa PubMed, Europe PMC, ClinicalTrials.gov, ScienceDaily y Medical Xpress. Una inteligencia artificial resume cada estudio en castellano llano, usando solo lo que dice el texto original, y lo clasifica según lo cerca que está del paciente. Cada resumen enlaza con su fuente para que puedas comprobarlo.</p>
-    <p class="warn">Esta web informa, no da consejo médico. Los resúmenes son automáticos y pueden tener errores. No cambies ni dejes ningún tratamiento sin hablarlo con tu médico. Si tienes una urgencia, llama al 112.</p>
-    <p class="status" id="status"></p>
-  </section>
+</div>
 </main>
 
 <button class="totop" id="toTop" aria-label="Volver arriba" hidden>
@@ -249,7 +320,7 @@
 
 <button class="ask-fab" id="askFab" aria-controls="chat" aria-expanded="false">
   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>
-  Pregunta
+  <span>Pregunta</span>
 </button>
 
 <aside class="chat" id="chat" aria-label="Preguntas" hidden>
@@ -276,10 +347,60 @@
   </form>
 </aside>
 
+<nav class="tabbar" aria-label="Secciones">
+  <a href="#inicio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg>Hoy</a>
+  <a href="#rutina"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2.4"/><path d="M7 21l3-7-3-3 5-2 5 2-3 3 3 7"/></svg>Rutina</a>
+  <a href="#diario"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a2 2 0 0 1 2 2v16l-4-2-4 2-4-2V4a1 1 0 0 1 1-1zM9 8h6M9 12h6"/></svg>Diario</a>
+  <a href="#hoy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h13v14H6a2 2 0 0 1-2-2zM17 9h3v8a2 2 0 0 1-2 2M8 9h5M8 13h5"/></svg>Noticias</a>
+  <a href="#guia"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c-2-1.5-5-2-8-1.5V19c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V4.5C17 4 14 4.5 12 6zM12 6v14.5"/></svg>Aprender</a>
+</nav>
+
+<dialog id="player" class="player" aria-labelledby="pName">
+  <div class="p-top">
+    <div class="p-bar" aria-hidden="true"></div>
+    <span class="p-count"></span>
+    <button class="p-close" type="button" aria-label="Cerrar la rutina">×</button>
+  </div>
+  <div class="p-main">
+    <div class="p-stage">
+      <div class="p-fig"></div>
+      <p class="p-hint">Arrastra el muñeco para girarlo. Lo naranja es lo que trabaja.</p>
+    </div>
+    <div class="p-info">
+      <h2 class="p-name" id="pName"></h2>
+      <p class="p-dose"></p>
+      <div class="p-clock">
+        <div class="p-ring"><span class="p-time">0:00</span></div>
+        <button class="btn p-pause" type="button">Pausa</button>
+      </div>
+      <ol class="p-steps"></ol>
+      <p class="p-safe"></p>
+      <div class="p-nav">
+        <button class="btn ghost p-prev" type="button">Anterior</button>
+        <button class="btn primary p-next" type="button">Hecho, siguiente</button>
+      </div>
+      <div class="p-extra">
+        <button class="chip p-swap" type="button">Cambiar este ejercicio</button>
+        <button class="chip p-voice" type="button" aria-pressed="false">Activar voz</button>
+      </div>
+    </div>
+  </div>
+  <div class="p-end" hidden>
+    <div class="p-end-fig" data-fig="celebra"></div>
+    <h2>Rutina terminada</h2>
+    <p>¿Cómo te has quedado?</p>
+    <div class="p-feel">
+      <button class="btn" type="button" data-feel="mejor">Mejor</button>
+      <button class="btn" type="button" data-feel="igual">Igual</button>
+      <button class="btn" type="button" data-feel="peor">Peor</button>
+    </div>
+  </div>
+</dialog>
+
 <div id="informe" class="informe" aria-hidden="true"></div>
 
 <div class="tip" id="tip" role="tooltip" hidden></div>
 
-<script type="module" src="js/app.js?v=12"></script>
+<script type="module" src="js/app.js?v=14"></script>
 </body>
 </html>

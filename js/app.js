@@ -3,6 +3,8 @@ import { BASE_GLOSSARY } from './glossary.js';
 import { initDiario } from './diario.js?v=12';
 import { initGuia } from './guia-ui.js?v=12';
 import { isImportant } from './avisos-regla.js?v=12';
+import { initRutina } from './rutina.js?v=14';
+import { initInicio } from './inicio.js?v=14';
 
 const $ = (s, el = document) => el.querySelector(s);
 const store = {
@@ -191,15 +193,26 @@ function initControls() {
   new IntersectionObserver(([e], o) => { if (e.isIntersecting) { $('.skin').classList.add('seen'); o.disconnect(); } }, { threshold: .4 }).observe($('.skin'));
 }
 
-// Barra de progreso, sección activa en el menú, botón de subir y atajo del buscador
+// Pantallas: cada enlace con # enseña su pantalla. Barra de progreso, botón de subir y atajo del buscador
+function showView(hash, scroll = true) {
+  const id = decodeURIComponent((hash || '').slice(1)) || 'inicio';
+  const target = document.getElementById(id) || $('#inicio');
+  const view = target.closest('[data-view]') || $('#inicio');
+  document.querySelectorAll('[data-view]').forEach((v) => { v.hidden = v !== view; });
+  document.querySelectorAll('.bar-nav a, .tabbar a').forEach((a) => {
+    const t = document.getElementById(a.getAttribute('href').slice(1));
+    const on = t?.closest('[data-view]') === view;
+    a.classList.toggle('on', on); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current');
+  });
+  document.documentElement.dataset.view = view.id;
+  document.dispatchEvent(new CustomEvent('viewchange', { detail: view.id }));
+  if (!scroll) return;
+  if (target === view) scrollTo({ top: 0 }); else target.scrollIntoView({ block: id.startsWith('n-') ? 'center' : 'start' });
+}
+
 function initNav() {
-  const links = [...document.querySelectorAll('.bar-nav a')], bar = $('#progress'), top = $('#toTop');
-  const spy = new IntersectionObserver((es) => es.forEach((e) => {
-    if (!e.isIntersecting) return;
-    links.forEach((a) => { const on = a.getAttribute('href') === `#${e.target.id}`; a.classList.toggle('on', on); if (on) a.scrollIntoView({ block: 'nearest', inline: 'nearest' }); });
-  }), { rootMargin: '-45% 0px -50% 0px' });
-  links.forEach((a) => { const s = document.querySelector(a.getAttribute('href')); if (s) spy.observe(s); });
-  spy.observe($('.hero'));
+  const bar = $('#progress'), top = $('#toTop');
+  addEventListener('hashchange', () => openFromHash());
   let q = false;
   const upd = () => {
     q = false;
@@ -212,14 +225,15 @@ function initNav() {
   top.onclick = () => { scrollTo({ top: 0 }); $('.brand').focus({ preventScroll: true }); };
   document.addEventListener('keydown', (e) => {
     if (e.key !== '/' || /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
-    e.preventDefault(); $('#q').scrollIntoView({ block: 'center' }); $('#q').focus({ preventScroll: true });
+    e.preventDefault(); location.hash = '#hoy'; $('#q').focus({ preventScroll: true });
   });
+  showView(location.hash, !!location.hash);
 }
 
 function openFromHash() {
+  showView(location.hash);
   const li = location.hash.startsWith('#n-') && document.getElementById(decodeURIComponent(location.hash.slice(1)));
-  if (li) { toggle(li); li.scrollIntoView({ block: 'center' }); }
-  else if (location.hash.length > 1) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView();
+  if (li && !li.classList.contains('open')) toggle(li);
 }
 
 function renderAlerts() {
@@ -234,8 +248,15 @@ function renderAlerts() {
   $('#alertList').onclick = (e) => {
     const a = e.target.closest('a'); if (!a) return;
     const li = document.getElementById(a.getAttribute('href').slice(1));
-    if (li) { e.preventDefault(); if (!li.classList.contains('open')) toggle(li); li.scrollIntoView({ block: 'center' }); }
+    if (li) { e.preventDefault(); history.pushState(null, '', a.getAttribute('href')); openFromHash(); }
   };
+}
+
+function renderHomeNews() {
+  const list = (DATA.items || []).filter((x) => x.kind !== 'trial' && x.title_es)
+    .sort((a, b) => (b.added || '').localeCompare(a.added || '')).slice(0, 3);
+  $('#homeNews').innerHTML = list.map((x) => `<li><a href="#n-${esc(x.id)}"><span class="mn-topic">${esc(TOPIC[x.topic] || 'Novedad')}</span>${esc(x.title_es)}</a><small>${fmtDate(x.added)}</small></li>`).join('')
+    || '<li class="empty">Hoy no hay novedades nuevas. Vuelve mañana.</li>';
 }
 
 async function load() {
@@ -244,9 +265,9 @@ async function load() {
     if (!r.ok) throw new Error(r.status);
     DATA = await r.json();
   } catch { DATA = { items: [], updated: null }; }
-  renderAll(); renderAlerts(); openFromHash();
+  renderAll(); renderAlerts(); renderHomeNews(); if (location.hash.startsWith('#n-')) openFromHash();
   store.set('lastVisit', new Date().toISOString());
 }
 
-initPrefs(); initTips(); initControls(); initNav(); initChat(); initDiario(); initGuia(); load();
-import('./nerve.js?v=12').then((m) => m.mountNerve($('#nerve'))).catch(() => {});
+initPrefs(); initTips(); initControls(); initRutina(); initInicio(); initNav(); initChat(); initDiario(); initGuia(); load();
+import('./nerve.js?v=14').then((m) => m.mountNerve($('#nerve'))).catch(() => {});
