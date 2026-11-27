@@ -1,10 +1,12 @@
 import { initChat } from './chat.js';
 import { BASE_GLOSSARY } from './glossary.js';
-import { initDiario } from './diario.js?v=12';
+import { initDiario } from './diario.js?v=17';
+import { initDolor } from './dolor.js?v=18';
 import { initGuia } from './guia-ui.js?v=12';
 import { isImportant } from './avisos-regla.js?v=12';
-import { initRutina } from './rutina.js?v=15';
-import { initInicio } from './inicio.js?v=15';
+import { initRutina } from './rutina.js?v=18';
+import { initInicio } from './inicio.js?v=18';
+import { initFondo } from './fondo.js?v=18';
 
 const $ = (s, el = document) => el.querySelector(s);
 const store = {
@@ -207,7 +209,16 @@ function showView(hash, scroll = true) {
   document.documentElement.dataset.page = view.id;
   document.dispatchEvent(new CustomEvent('viewchange', { detail: view.id }));
   if (!scroll) return;
-  if (target === view) scrollTo({ top: 0 }); else target.scrollIntoView({ block: id.startsWith('n-') ? 'center' : 'start' });
+  goTo(target === view ? null : target, id.startsWith('n-'));
+}
+
+// Desplazamiento: con el scroll suave activo se usa el suyo; si no, el del navegador
+let lenis = null;
+function goTo(el, center) {
+  if (!lenis) return el ? el.scrollIntoView({ block: center ? 'center' : 'start' }) : scrollTo({ top: 0 });
+  lenis.resize();
+  if (!el) return lenis.scrollTo(0, { immediate: true, force: true });
+  lenis.scrollTo(el, { offset: center ? -(innerHeight - el.offsetHeight) / 2 : -84, force: true });
 }
 
 function initNav() {
@@ -222,7 +233,7 @@ function initNav() {
   };
   addEventListener('scroll', () => { if (!q) { q = true; requestAnimationFrame(upd); } }, { passive: true });
   upd();
-  top.onclick = () => { scrollTo({ top: 0 }); $('.brand').focus({ preventScroll: true }); };
+  top.onclick = () => { lenis ? lenis.scrollTo(0, { force: true }) : scrollTo({ top: 0 }); $('.brand').focus({ preventScroll: true }); };
   document.addEventListener('keydown', (e) => {
     if (e.key !== '/' || /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return;
     e.preventDefault(); location.hash = '#hoy'; $('#q').focus({ preventScroll: true });
@@ -230,7 +241,16 @@ function initNav() {
   showView(location.hash, !!location.hash);
 }
 
+// Una noticia enlazada que no está en la lista visible se pone arriba, para que el enlace siempre lleve a algo
+function ensureItem(hash) {
+  const id = decodeURIComponent(hash.slice(3));
+  if (!hash.startsWith('#n-') || document.getElementById(`n-${id}`)) return;
+  const x = (DATA.items || []).find((i) => i.id === id);
+  if (x) $('#list-main').insertAdjacentHTML('afterbegin', itemHTML(x));
+}
+
 function openFromHash() {
+  ensureItem(location.hash);
   showView(location.hash);
   const li = location.hash.startsWith('#n-') && document.getElementById(decodeURIComponent(location.hash.slice(1)));
   if (li && !li.classList.contains('open')) toggle(li);
@@ -269,5 +289,6 @@ async function load() {
   store.set('lastVisit', new Date().toISOString());
 }
 
-initPrefs(); initTips(); initControls(); initRutina(); initInicio(); initNav(); initChat(); initDiario(); initGuia(); load();
-import('./nerve.js?v=15').then((m) => m.mountNerve($('#nerve'))).catch(() => {});
+initPrefs(); initTips(); initControls(); initRutina(); initInicio(); initNav(); initFondo(); initChat(); initDiario(); initDolor(); initGuia(); load();
+import('./motion.js?v=18').then((m) => m.initMotion()).then((l) => { lenis = l; })
+  .catch((e) => { document.documentElement.classList.remove('m-wait'); console.warn('Sin movimiento:', e); });

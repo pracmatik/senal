@@ -10,7 +10,7 @@ const data = JSON.parse(await readFile(new URL('../data/news.json', import.meta.
 const items = data.items.filter(isImportant).sort((a, b) => b.added.localeCompare(a.added)).slice(0, 40);
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"><channel>
-<title>Señal: avisos importantes</title><link>${SITE}</link><language>es-ES</language>
+<title>DjCJA: avisos importantes</title><link>${SITE}</link><language>es-ES</language>
 <description>Ensayos con centros en España o Europa y tratamientos aprobados sobre fibra pequeña y dolor neuropático.</description>
 ${items.map((x) => `<item><title>${esc(x.title_es)}</title><link>${SITE}#n-${esc(x.id)}</link><guid isPermaLink="false">${esc(x.id)}</guid><pubDate>${new Date(x.added + 'T06:00:00Z').toUTCString()}</pubDate><description>${esc(x.summary_es)}</description></item>`).join('\n')}
 </channel></rss>`;

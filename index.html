@@ -3,27 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Señal</title>
+<title>DjCJA</title>
 <meta name="description" content="Novedades médicas sobre la polineuropatía de fibra pequeña, el dolor neuropático y el sistema nervioso, explicadas en palabras sencillas y actualizadas cada mañana.">
-<meta property="og:title" content="Señal, avances del sistema nervioso explicados en claro">
+<meta property="og:title" content="DjCJA, avances del sistema nervioso explicados en claro">
 <meta property="og:description" content="Cada mañana, lo nuevo sobre fibra pequeña, dolor neuropático y células iPS, sin jerga.">
-<meta name="theme-color" content="#F5F3F9">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M3 22c6 0 6-12 13-12s7 12 13 12' fill='none' stroke='%231F6F78' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='10' r='3.5' fill='%23D9A21B'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#E4E1DA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16181B" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M3 22c6 0 6-12 13-12s7 12 13 12' fill='none' stroke='%2314171A' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='10' r='3.5' fill='%232B44D6'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/site.css?v=15">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&family=Bodoni+Moda:opsz,wght@6..96,400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css?v=18">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" crossorigin>
+<script>if(!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.classList.add('m-wait');setTimeout(function(){document.documentElement.classList.remove('m-wait')},2200)}</script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
 </head>
 <body>
 <a class="skip" href="#main">Saltar al contenido</a>
-<canvas id="nerve" aria-hidden="true"></canvas>
+<div class="bgv" aria-hidden="true"><div class="bgv-media"></div><div class="bgv-veil"></div></div>
 
 <header class="bar">
-  <a class="brand" href="#inicio" aria-label="Señal, inicio">
+  <a class="brand" href="#inicio" aria-label="DjCJA, inicio">
     <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 22c6 0 6-12 13-12s7 12 13 12"/><circle cx="16" cy="10" r="3.5"/></svg>
-    Señal
+    DjCJA
   </a>
   <nav class="bar-nav" aria-label="Secciones">
     <a href="#inicio">Hoy</a>
@@ -53,6 +56,7 @@
       <p class="hello-q" id="moodQ">¿Cómo te encuentras hoy?</p>
       <div class="moods" id="moods" role="radiogroup" aria-labelledby="moodQ"></div>
       <p class="mood-reply" id="moodReply" aria-live="polite"></p>
+      <a class="hello-pain" href="#dolor">¿Te duele algo hoy?</a>
     </div>
     <div class="hello-stage">
       <div class="hello-fig" data-fig="saludo"></div>
@@ -105,6 +109,17 @@
     <button class="info" data-tip="Cada día te propongo ejercicios distintos según el tiempo que tengas y cómo te encuentres. Casi todos son sentado o tumbado para no cargar los pies. Pulsa un muñeco y arrástralo para verlo desde otro lado. La parte que trabaja brilla en naranja y la sombra naranja marca hasta dónde llegar.">i</button>
   </div>
   <p class="view-intro" id="rTheme"></p>
+  <section class="r-zones" id="rZones" aria-labelledby="rz-title">
+    <h3 id="rz-title">¿Qué quieres trabajar hoy?</h3>
+    <p class="r-zones-sub">Elige una o varias zonas. Si no eliges ninguna, te propongo yo una.</p>
+    <div class="r-zone-chips" id="rZoneChips" role="group" aria-labelledby="rz-title"></div>
+    <p class="r-zone-msg" id="rZoneMsg" role="status" aria-live="polite"></p>
+    <p class="r-skip" id="rSkip" hidden></p>
+  </section>
+  <div class="r-nudge" id="rNudge" hidden>
+    <p id="rNudgeText"></p>
+    <button class="btn" id="rNudgeAdd" type="button"></button>
+  </div>
   <div class="r-top">
     <div class="card r-time">
       <label class="r-q" for="rMin">¿Cuánto tiempo tienes hoy?</label>
@@ -212,6 +227,57 @@
       <button class="info" data-tip="Apunta cada día cómo estás. Con el tiempo verás si mejoras, qué te lo empeora y podrás enseñárselo a tu médico. Se guarda solo en este aparato: nadie más lo ve, ni siquiera nosotros. Si cambias de móvil u ordenador, usa Guardar copia y luego Recuperar copia en el nuevo.">i</button>
     </div>
     <p class="block-intro">Menos de un minuto al día. Se guarda solo en este aparato.</p>
+    <div class="pm" id="dolor" aria-labelledby="pm-title">
+      <div class="pm-head">
+        <h3 id="pm-title">¿Te duele algo hoy?</h3>
+        <button class="info" data-tip="Toca en el muñeco el sitio donde te duele y se pone rojo. Puedes marcar varias zonas. Después cuentas cómo es el dolor y cuánto duele. Si no puedes tocar el muñeco, elige las zonas en la lista de al lado. Se guarda solo en este aparato y sale en el resumen para tu médico.">i</button>
+      </div>
+      <p class="pm-intro">Toca en el muñeco donde te duele. Puedes marcar varias zonas. Arrástralo para verlo de lado.</p>
+      <div class="pm-grid">
+        <div class="pm-stage" id="pmStage">
+          <p class="pm-sides" aria-hidden="true"><span class="pm-l"></span><span class="pm-r"></span></p>
+          <div class="pm-fig" id="pmFig" data-fig="mapa-dolor" data-big></div>
+          <p class="pm-hover" id="pmHover" aria-hidden="true"></p>
+          <button class="btn ghost pm-turn" id="pmTurn" type="button">Ver de espaldas</button>
+          <p class="pm-nogl">El muñeco no se puede mostrar en este aparato. Elige las zonas en la lista.</p>
+        </div>
+        <div class="pm-side">
+          <div class="pm-bar">
+            <label class="pm-date">Día <input type="date" id="pmDate"></label>
+            <span class="pm-count" id="pmCount"></span>
+          </div>
+          <div class="pm-chips" id="pmChips"></div>
+          <p class="pm-sr" id="pmStatus" role="status" aria-live="polite"></p>
+          <button class="chip pm-jump" id="pmJump" type="button" hidden>Contar cómo es el dolor</button>
+        </div>
+      </div>
+      <div class="pm-body">
+        <p class="pm-empty" id="pmEmpty">Todavía no has marcado ninguna zona.</p>
+        <div class="pm-detail" id="pmDetail"></div>
+        <div class="pm-actions">
+          <button class="btn primary" id="pmSave" type="button">Guardar el mapa</button>
+          <button class="btn ghost" id="pmNone" type="button">Hoy no me duele nada</button>
+          <span class="pm-dirty" id="pmDirty" hidden>Hay cambios sin guardar</span>
+          <span class="pm-msg" id="pmMsg" role="status"></span>
+        </div>
+      </div>
+      <div class="pm-sum">
+        <div class="pm-sum-head">
+          <h4>Dónde te ha dolido</h4>
+          <div class="pm-days" role="group" aria-label="Periodo">
+            <button class="chip on" type="button" data-days="14" aria-pressed="true">14 días</button>
+            <button class="chip" type="button" data-days="30" aria-pressed="false">30 días</button>
+          </div>
+        </div>
+        <div class="pm-sum-grid">
+          <div class="pm-fig pm-fig-sm" id="pmHeat" data-fig="mapa-dolor"></div>
+          <div class="pm-sum-text">
+            <div id="pmSumList"></div>
+            <p class="pm-legend" id="pmLegend" hidden><i aria-hidden="true"></i>Más rojo oscuro, más días con dolor.</p>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="diary">
       <form class="d-form" id="dForm">
         <div class="d-top">
@@ -314,6 +380,10 @@
 </div>
 </main>
 
+<footer class="site-foot">
+  <p>Vídeos de fondo: <a href="https://www.pexels.com" target="_blank" rel="noopener">Pexels</a></p>
+</footer>
+
 <button class="totop" id="toTop" aria-label="Volver arriba" hidden>
   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l-7 7h4.5v7h5v-7H19z"/></svg>
 </button>
@@ -323,7 +393,7 @@
   <span>Pregunta</span>
 </button>
 
-<aside class="chat" id="chat" aria-label="Preguntas" hidden>
+<aside class="chat" data-lenis-prevent id="chat" aria-label="Preguntas" hidden>
   <div class="chat-head">
     <strong>Pregúntame, Christian</strong>
     <button class="info" data-tip="Escribe una duda sobre la fibra pequeña, el dolor neuropático o cualquier avance médico. Antes de contestar busca en fuentes médicas fiables y actuales, y te dice de dónde ha sacado cada cosa. Responde corto; si quieres más, pulsa Ampliar. No sustituye a tu médico.">i</button>
@@ -355,7 +425,7 @@
   <a href="#guia"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6c-2-1.5-5-2-8-1.5V19c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V4.5C17 4 14 4.5 12 6zM12 6v14.5"/></svg>Aprender</a>
 </nav>
 
-<dialog id="player" class="player" aria-labelledby="pName">
+<dialog id="player" class="player" data-lenis-prevent aria-labelledby="pName">
   <div class="p-top">
     <div class="p-bar" aria-hidden="true"></div>
     <span class="p-count"></span>
@@ -401,6 +471,6 @@
 
 <div class="tip" id="tip" role="tooltip" hidden></div>
 
-<script type="module" src="js/app.js?v=15"></script>
+<script type="module" src="js/app.js?v=18"></script>
 </body>
 </html>

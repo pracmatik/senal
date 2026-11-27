@@ -1,7 +1,7 @@
 // Portada: saludo según la hora, cómo te encuentras, rutina de hoy, consejo del día y diario
-import { TIPS, EXERCISES } from './rutina-datos.js?v=15';
-import { todaySummary } from './rutina.js?v=15';
-import { animateFigures } from './figura.js?v=15';
+import { TIPS, EXERCISES } from './rutina-datos.js?v=17';
+import { todaySummary } from './rutina.js?v=18';
+import { animateFigures } from './figura.js?v=18';
 
 const $ = (s, el = document) => el.querySelector(s);
 const store = {
@@ -67,7 +67,7 @@ function renderTip() {
 
 function renderRoutine() {
   const s = todaySummary();
-  $('#homeTheme').textContent = THEME_PILL[s.key] || '';
+  $('#homeTheme').textContent = s.pill || THEME_PILL[s.key] || '';
   $('#homeRutina').innerHTML = `${s.n} ejercicios, unos <b>${s.min} minutos</b>`;
   const figs = $('#homeFigs');
   figs.innerHTML = s.ids.slice(0, 4).map((id) => `<figure><div data-fig="${esc(id)}"></div><figcaption>${esc(BY[id]?.n || '')}</figcaption></figure>`).join('');

@@ -1,11 +1,11 @@
 // Muñeco 3D de Christian para cada ejercicio. Un solo motor WebGL compartido que pinta en el
 // lienzo de cada ficha visible. Los movimientos viven en movimientos.js.
 import * as THREE from 'three';
-import { MOVES, BASES } from './movimientos.js?v=15';
+import { MOVES, BASES } from './movimientos.js?v=17';
 
 const D = Math.PI / 180;
 const SIZE = 1024;
-const COL = { skin: 0xd9a27a, shirt: 0x6b3f86, shorts: 0x2b2540, sock: 0xf1edf6, sole: 0x4a4458, hair: 0x241c1a, eye: 0x221a1c, lip: 0xa8584f, glow: 0xf08a4b };
+const COL = { skin: 0xd9a27a, shirt: 0x3a4047, shorts: 0x26292e, sock: 0xeeece6, sole: 0x45484d, hair: 0x241c1a, eye: 0x221a1c, lip: 0xa8584f, glow: 0xf08a4b };
 const LEN = { th: 0.42, sh: 0.4, ua: 0.28, fa: 0.25 };
 const REG = ['armL', 'armR', 'handL', 'handR', 'legL', 'legR', 'footL', 'footR', 'torso', 'neck'];
 const GROUPS = { arms: ['armL', 'armR', 'handL', 'handR'], legs: ['legL', 'legR', 'footL', 'footR'], feet: ['footL', 'footR'], hands: ['handL', 'handR'],
@@ -80,6 +80,38 @@ function buildFace(head, M) {
   const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.0045, 8, 20, Math.PI), k('lip'));
   mouth.position.set(0, 0.068, 0.094); mouth.rotation.set(-0.25, 0, Math.PI); head.add(mouth);
 }
+/* ---------- zonas del mapa de dolor ---------- */
+// Cada zona es un volumen transparente pegado a una articulación del muñeco: sirve para tocar y, si se pinta, para brillar.
+// [articulación, centro x y z, radios x y z]. La x se espeja en el lado derecho. Las zonas con lado llevan -i o -d.
+const ZS = {
+  cuello: ['neck', 0, 0.04, 0.004, 0.062, 0.07, 0.062],
+  'espalda-alta': ['chest', 0, 0.12, -0.085, 0.15, 0.12, 0.075],
+  lumbar: ['spine', 0, 0.1, -0.1, 0.125, 0.1, 0.075],
+  hombro: ['sh', 0.012, 0, 0, 0.082, 0.082, 0.082],
+  codo: ['el', 0, 0, 0, 0.062, 0.062, 0.062],
+  muneca: ['wr', 0, 0, 0, 0.052, 0.052, 0.052],
+  mano: ['wr', 0, -0.1, 0, 0.05, 0.075, 0.036],
+  cadera: ['hip', 0.02, 0.01, 0, 0.1, 0.1, 0.17],
+  rodilla: ['kn', 0, 0, 0.012, 0.092, 0.085, 0.09],
+  tobillo: ['an', 0, 0, 0, 0.055, 0.055, 0.055],
+  pie: ['an', 0, -0.045, 0.035, 0.068, 0.05, 0.1],
+  'dedos-pie': ['to', 0, 0, 0.045, 0.05, 0.036, 0.05],
+};
+const SIDED = new Set(['hombro', 'codo', 'muneca', 'mano', 'cadera', 'rodilla', 'tobillo', 'pie', 'dedos-pie']);
+export const ZONE_IDS = Object.keys(ZS).flatMap((k) => (SIDED.has(k) ? [`${k}-i`, `${k}-d`] : [k]));
+const ZGEO = new THREE.SphereGeometry(1, 18, 12);
+function buildZones(J) {
+  const out = [];
+  for (const id of ZONE_IDS) {
+    const side = id.endsWith('-i') ? 'L' : id.endsWith('-d') ? 'R' : '', k = side ? id.slice(0, -2) : id;
+    const [jn, x, y, z, rx, ry, rz] = ZS[k], s = side === 'R' ? -1 : 1;
+    const m = new THREE.Mesh(ZGEO, new THREE.MeshBasicMaterial({ color: 0xd8232a, transparent: true, opacity: 0.7, depthWrite: false, toneMapped: false }));
+    m.position.set(x * s, y, z); m.scale.set(rx, ry, rz);
+    m.visible = false; m.renderOrder = 3; m.userData.zone = id;
+    J[jn + side].add(m); out.push(m);
+  }
+  return out;
+}
 function buildRig(ghostMode) {
   const M = materials(ghostMode);
   const J = { root: new THREE.Group() };
@@ -91,7 +123,7 @@ function buildRig(ghostMode) {
   J.head = joint(J.neck, 0, 0.08, 0, ball(0.1, M('neck', 'skin'), 0, 0.1, 0, 0.9, 1.05, 1));
   if (!ghostMode) buildFace(J.head, M);
   for (const s of ['L', 'R']) { buildArm(J, s, M); buildLeg(J, s, M); }
-  return { root: J.root, J };
+  return { root: J.root, J, zones: ghostMode ? [] : buildZones(J) };
 }
 
 /* ---------- postura ---------- */
@@ -184,20 +216,20 @@ function chair(wood) {
 }
 function buildProps() {
   const wood = new THREE.MeshStandardMaterial({ color: 0xb98d63, roughness: 0.7 });
-  const pale = new THREE.MeshStandardMaterial({ color: 0xe9e4f1, roughness: 0.9 });
+  const pale = new THREE.MeshStandardMaterial({ color: 0xe8e5de, roughness: 0.9 });
   const P = { chair: chair(wood), chairFront: chair(wood), chairSide: chair(wood) };
   P.chairFront.rotation.y = Math.PI; P.chairFront.position.set(0, 0, 0.28);
   P.chairSide.rotation.y = -Math.PI / 2; P.chairSide.position.set(0.5, 0, 0.05);
   P.wall = box(1.6, 2.1, 0.06, pale, 0, 1.05, 0.95);
-  P.mat = box(2.0, 0.025, 0.7, new THREE.MeshStandardMaterial({ color: 0x9a7cbc, roughness: 0.95 }), 0.1, 0.012, 0);
+  P.mat = box(2.0, 0.025, 0.7, new THREE.MeshStandardMaterial({ color: 0x8d949c, roughness: 0.95 }), 0.1, 0.012, 0);
   P.pillow = ball(0.16, pale, 0.62, 0.2, 0, 1.4, 0.6, 1.6);
-  P.ball = ball(0.045, new THREE.MeshStandardMaterial({ color: 0xf08a4b, roughness: 0.5 }));
+  P.ball = ball(0.045, new THREE.MeshStandardMaterial({ color: 0x9aa0a6, roughness: 0.5 }));
   P.bottleL = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.17, 16), new THREE.MeshStandardMaterial({ color: 0x7fc7e8, roughness: 0.2, transparent: true, opacity: 0.85 }));
   P.bottleR = P.bottleL.clone();
   P.table = new THREE.Group();
   P.table.add(box(1.0, 0.04, 0.6, wood, 0, 0.74, 0), box(0.05, 0.72, 0.05, wood, -0.44, 0.36, 0.24), box(0.05, 0.72, 0.05, wood, 0.44, 0.36, 0.24), box(0.05, 0.72, 0.05, wood, -0.44, 0.36, -0.24), box(0.05, 0.72, 0.05, wood, 0.44, 0.36, -0.24));
   P.table.position.set(0, 0, 0.5);
-  P.towel = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1, 8), new THREE.MeshStandardMaterial({ color: 0x1f9d7a, roughness: 0.9 }));
+  P.towel = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1, 8), new THREE.MeshStandardMaterial({ color: 0x5d6670, roughness: 0.9 }));
   for (const o of Object.values(P)) { o.visible = false; o.userData.home = o.position.clone(); o.userData.rotY = o.rotation.y; scene.add(o); }
   return P;
 }
@@ -234,6 +266,15 @@ function setGlow(hi, t) {
   });
 }
 
+// Zonas del mapa de dolor: solo se ven las que esta ficha pide. paint = { zona: { c: color, o: opacidad, p: late } }
+function paintZones(paint, t) {
+  for (const m of rig.zones) {
+    const z = paint?.[m.userData.zone];
+    m.visible = !!z;
+    if (z) { m.material.color.setHex(z.c); m.material.opacity = z.o * (z.p && !still ? 0.85 + 0.15 * Math.sin(t / 230) : 1); }
+  }
+}
+
 function init() {
   if (R3) return true;
   try {
@@ -242,15 +283,15 @@ function init() {
   R3.setPixelRatio(1); R3.setSize(SIZE, SIZE, false); R3.setClearColor(0, 0);
   R3.toneMapping = THREE.ACESFilmicToneMapping; R3.toneMappingExposure = 1.15;
   scene = new THREE.Scene();
-  scene.add(new THREE.HemisphereLight(0xfff6ee, 0x6d5f86, 1.7));
+  scene.add(new THREE.HemisphereLight(0xfff6ee, 0x6b6f76, 1.7));
   const sun = new THREE.DirectionalLight(0xffffff, 1.8); sun.position.set(2, 4, 3); scene.add(sun);
-  const rim = new THREE.DirectionalLight(0xe39bd8, 0.9); rim.position.set(-3, 2, -2); scene.add(rim);
+  const rim = new THREE.DirectionalLight(0xdfe4f2, 0.9); rim.position.set(-3, 2, -2); scene.add(rim);
   cam = new THREE.PerspectiveCamera(30, 1, 0.1, 30);
   rig = buildRig(false); ghost = buildRig(true);
   scene.add(rig.root, ghost.root);
   const sc = document.createElement('canvas'); sc.width = sc.height = 128;
   const g = sc.getContext('2d'), gr = g.createRadialGradient(64, 64, 4, 64, 64, 64);
-  gr.addColorStop(0, 'rgba(40,20,60,.35)'); gr.addColorStop(1, 'rgba(40,20,60,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  gr.addColorStop(0, 'rgba(20,23,26,.32)'); gr.addColorStop(1, 'rgba(20,23,26,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
   shadow = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sc), transparent: true, depthWrite: false }));
   shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.003; scene.add(shadow);
   props = buildProps();
@@ -258,7 +299,8 @@ function init() {
 }
 
 /* ---------- pintar ---------- */
-function render(e, t) {
+// Colocar el muñeco y la cámara como los pide esta ficha (sirve para pintar y para saber qué se toca)
+function prepare(e, t) {
   const { m, base, f, pk } = frames(e.id);
   const p = still ? f[pk] : poseAt(e.id, t);
   applyPose(rig.J, p);
@@ -266,12 +308,17 @@ function render(e, t) {
   ghost.root.visible = f.length > 1 && m.ghost !== false;
   if (ghost.root.visible) applyPose(ghost.J, f[pk]);
   setGlow(p.hi ?? m.hi, t);
+  paintZones(e.paint, t);
   placeProps(m, rig.J);
   const c = { ...base.cam, ...(m.cam || {}) }, az = (c.az + e.yaw) * D, el = c.el * D;
   cam.position.set(c.t[0] + c.d * Math.sin(az) * Math.cos(el), c.t[1] + c.d * Math.sin(el), c.t[2] + c.d * Math.cos(az) * Math.cos(el));
   cam.lookAt(c.t[0], c.t[1], c.t[2]);
   shadow.position.set(base.lie ? 0.1 : c.t[0], 0.003, base.lie ? 0 : 0.1);
   shadow.scale.set(base.lie ? 1.6 : 1, base.lie ? 0.7 : 1, 1);
+  e.t = t;
+}
+function render(e, t) {
+  prepare(e, t);
   const w = e.cv.width;
   R3.setViewport(0, 0, w, w); R3.setScissor(0, 0, w, w); R3.setScissorTest(true);
   R3.render(scene, cam);
@@ -313,7 +360,7 @@ export function animateFigures(root = document) {
   }, { rootMargin: '80px' });
   for (const n of nodes) {
     if (n._fig?.id === n.dataset.fig && n._fig.cv.isConnected) continue;
-    const big = !!n.closest('dialog');
+    const big = !!n.closest('dialog') || 'big' in n.dataset;
     const cv = document.createElement('canvas');
     const px = Math.round((n.clientWidth || (big ? 420 : 160)) * Math.min(devicePixelRatio || 1, 2.5));
     cv.width = cv.height = Math.max(240, Math.min(SIZE, px));
@@ -327,6 +374,50 @@ export function animateFigures(root = document) {
     io.observe(n);
   }
   kick();
+}
+
+/* ---------- mapa de dolor: pintar, tocar, girar ---------- */
+export function paintFigure(node, paint) {
+  const e = node._fig; if (!e) return;
+  e.paint = paint; e.dirty = true; kick();
+}
+export function turnFigure(node, yaw) {
+  const e = node._fig; if (!e) return;
+  e.yaw = yaw; e.dirty = true; kick();
+}
+export const figureYaw = (node) => node._fig?.yaw ?? 0;
+
+const RAY = new THREE.Raycaster(), NDC = new THREE.Vector2(), PT = new THREE.Vector3();
+// Qué zona hay en este punto de la pantalla. Primero se lanza un rayo contra el muñeco (el cuerpo tapa lo que tiene detrás);
+// si el dedo cae un poco al lado, se coge la zona visible más cercana dentro de 24 píxeles.
+export function pickZone(node, clientX, clientY) {
+  const e = node._fig;
+  if (!e || !R3) return null;
+  prepare(e, e.t || 0);
+  cam.updateMatrixWorld();
+  const r = e.cv.getBoundingClientRect(), px = clientX - r.left, py = clientY - r.top;
+  const meshes = [];
+  rig.root.traverse((o) => { if (o.isMesh) meshes.push(o); });
+  const first = (x, y) => { NDC.set(x, y); RAY.setFromCamera(NDC, cam); return RAY.intersectObjects(meshes, false)[0]; };
+  const hit = first((px / r.width) * 2 - 1, -(py / r.height) * 2 + 1);
+  if (hit?.object.userData.zone) return hit.object.userData.zone;
+  let best = null, bd = 24;
+  for (const m of rig.zones) {
+    m.getWorldPosition(PT).project(cam);
+    const d = Math.hypot((PT.x + 1) / 2 * r.width - px, (1 - PT.y) / 2 * r.height - py);
+    if (d >= bd) continue;
+    const h = first(PT.x, PT.y);          // ¿se ve esa zona, o la tapa el cuerpo?
+    if (h?.object === m) { best = m.userData.zone; bd = d; }
+  }
+  return best;
+}
+
+// Foto del muñeco tal como está ahora, para el resumen que se imprime
+export function snapshotFigure(node) {
+  const e = node._fig;
+  if (!e || !R3) return '';
+  render(e, e.t || 0);
+  try { return e.cv.toDataURL('image/png'); } catch { return ''; }
 }
 
 export { MOVES };

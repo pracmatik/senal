@@ -1,6 +1,7 @@
 // Diario de síntomas y preparación de la visita al médico.
 // Todo se guarda solo en este navegador (localStorage); nada sale del aparato.
 import { CAUSES, QUESTIONS } from './guia.js';
+import { cleanBody, diaryZones, bodyStats, bodyLines, kindSplit } from './zonas.js?v=17';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s = '') => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -17,9 +18,26 @@ const GROUPS = {
   other: ['Mareo al levantarme', 'Sudor raro', 'Digestión', 'Cansancio', 'Ojos o boca secos', 'Palpitaciones'],
   triggers: ['Calor', 'Frío', 'Estrés', 'Ejercicio', 'Estar de pie', 'Roce de ropa o sábanas', 'Poco sueño', 'Comida o alcohol'],
 };
-const PAIN = ['Sin dolor', 'Muy leve', 'Leve', 'Molesto', 'Molesto', 'Moderado', 'Moderado', 'Fuerte', 'Muy fuerte', 'Intenso', 'El peor que imagino'];
+export const PAIN = ['Sin dolor', 'Muy leve', 'Leve', 'Molesto', 'Molesto', 'Moderado', 'Moderado', 'Fuerte', 'Muy fuerte', 'Intenso', 'El peor que imagino'];
 
 let diary = store.get('diary', {});
+
+// Mapa de dolor en el cuerpo (dolor.js): se guarda dentro del mismo día del diario, en el campo body
+export const getBody = (date) => cleanBody(diary[date]?.body);
+export const allDiary = () => diary;
+let bodyPicture = null; // dolor.js lo rellena: devuelve la foto del muñeco para el resumen
+export const setBodyPicture = (fn) => { bodyPicture = fn; };
+export function saveBody(date, body) {
+  const clean = cleanBody(body) || [];
+  const top = Math.max(0, ...clean.map((b) => b.i)), fresh = !diary[date];
+  diary[date] = diary[date]
+    ? { ...diary[date], body: clean }
+    : { pain: top, zones: diaryZones(clean), kinds: [], other: [], triggers: [], sleep: '', note: '', body: clean };
+  const ok = persist();
+  render();
+  if ($('#dForm').date.value === date) { if (fresh) fill(date); else $('#dSave').textContent = 'Actualizar este día'; }
+  return ok;
+}
 
 export function initDiario() {
   const form = $('#dForm');
@@ -56,13 +74,15 @@ function fill(date) {
   f.querySelectorAll('input[name=sleep]').forEach((r) => (r.checked = r.value === (e.sleep || '')));
   f.note.value = e.note || '';
   $('#dSave').textContent = diary[date] ? 'Actualizar este día' : 'Guardar el día';
+  document.dispatchEvent(new CustomEvent('diariodate', { detail: date }));
 }
 
 function save(f) {
   const pick = (n) => [...f.querySelectorAll(`input[name=${n}]:checked`)].map((c) => c.value);
   const date = f.date.value;
   if (!date || date > iso()) return msg('Elige un día que no sea futuro.');
-  diary[date] = { pain: +f.pain.value, zones: pick('zones'), kinds: pick('kinds'), other: pick('other'), triggers: pick('triggers'), sleep: f.sleep.value, note: f.note.value.trim().slice(0, 300) };
+  diary[date] = { pain: +f.pain.value, zones: pick('zones'), kinds: pick('kinds'), other: pick('other'), triggers: pick('triggers'), sleep: f.sleep.value, note: f.note.value.trim().slice(0, 300),
+    ...(diary[date]?.body ? { body: diary[date].body } : {}) }; // el mapa del cuerpo se conserva
   if (!persist()) return msg('No se ha podido guardar. Puede que el navegador esté en modo privado.');
   msg(`Guardado el ${nice(date)}.`); fill(date); render();
 }
@@ -125,7 +145,8 @@ async function importCopy(e) {
   try {
     const j = JSON.parse(await file.text());
     if (!j || typeof j.diary !== 'object') throw new Error();
-    const ok = Object.entries(j.diary).filter(([d, v]) => /^\d{4}-\d{2}-\d{2}$/.test(d) && v && Number.isInteger(v.pain) && v.pain >= 0 && v.pain <= 10);
+    const ok = Object.entries(j.diary).filter(([d, v]) => /^\d{4}-\d{2}-\d{2}$/.test(d) && v && Number.isInteger(v.pain) && v.pain >= 0 && v.pain <= 10)
+      .map(([d, v]) => { const { body, ...rest } = v, b = cleanBody(body); return [d, b ? { ...rest, body: b } : rest]; });
     diary = { ...diary, ...Object.fromEntries(ok) };
     if (Array.isArray(j.causes)) store.set('causes', j.causes);
     if (Array.isArray(j.qs)) store.set('qs', j.qs);
@@ -147,6 +168,19 @@ function initVisit() {
   $('#vPrint').onclick = printReport;
 }
 
+// Dónde duele según el mapa del cuerpo: foto del muñeco con las zonas teñidas y lista de las más frecuentes
+function bodySection(n) {
+  const st = bodyStats(diary, iso(new Date(Date.now() - (n - 1) * 864e5)));
+  if (!st.days) return '';
+  const list = (arr) => `<ul>${arr.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
+  const pics = bodyPicture?.(n) || [];
+  const split = kindSplit(st);
+  return `<h2>Dónde duele (mapa del cuerpo)</h2>
+    <p>${st.days} ${st.days === 1 ? 'día' : 'días'} con el mapa rellenado. ${st.zones.length ? 'Cuanto más rojo, más días ha dolido esa zona.' : 'En esos días no marcó ninguna zona.'}</p>
+    <div class="r-body"><div class="pm-pics">${pics.map((src, i) => `<img src="${src}" alt="Muñeco ${i ? 'de espaldas' : 'de frente'} con las zonas dolorosas en rojo">`).join('')}</div>${st.zones.length ? list(bodyLines(st, 8)) : ''}</div>
+    ${split ? `<p><b>Tipo de dolor:</b> ${esc(split)}.</p>` : ''}`;
+}
+
 function printReport() {
   const n = +$('#vDays').value, days = lastDays(n), s = stats(days);
   const done = new Set(Object.keys(store.get('causes', {})));
@@ -164,10 +198,11 @@ function printReport() {
     <p><b>Otros:</b> ${esc(top(s.other, 5)) || 'ninguno'}.</p><p><b>Lo empeora:</b> ${esc(top(s.triggers, 5)) || 'sin datos'}.</p>
     <h2>Notas del periodo</h2>${list(days.filter((d) => diary[d].note).map((d) => `${nice(d)}: ${diary[d].note}`))}`
     : '<p>No hay días apuntados en este periodo.</p>'}
+    ${bodySection(n)}
     <h2>Causas que ya me han mirado</h2>${list(CAUSES.filter((c) => done.has(c.id)).map((c) => c.name))}
     <h2>Causas que quiero preguntar si se han descartado</h2>${list(CAUSES.filter((c) => !done.has(c.id)).map((c) => `${c.name} (${c.test})`))}
     <h2>Mis preguntas</h2>${list([...qs, ...mine])}
-    <p class="r-foot">Hecho con Señal, pracmatik.github.io/senal. Es un registro personal, no un informe médico.</p>`;
+    <p class="r-foot">Hecho con DjCJA, pracmatik.github.io/senal. Es un registro personal, no un informe médico.</p>`;
   document.body.classList.add('printing');
   const done2 = () => { document.body.classList.remove('printing'); removeEventListener('afterprint', done2); };
   addEventListener('afterprint', done2);

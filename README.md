@@ -1,4 +1,4 @@
-# Señal
+# DjCJA
 
 Web pública con novedades sobre polineuropatía de fibra pequeña, dolor neuropático, células iPS y sistema nervioso, explicadas en castellano llano.
 
