@@ -3,8 +3,8 @@ import { BASE_GLOSSARY } from './glossary.js';
 import { initDiario } from './diario.js?v=12';
 import { initGuia } from './guia-ui.js?v=12';
 import { isImportant } from './avisos-regla.js?v=12';
-import { initRutina } from './rutina.js?v=14';
-import { initInicio } from './inicio.js?v=14';
+import { initRutina } from './rutina.js?v=15';
+import { initInicio } from './inicio.js?v=15';
 
 const $ = (s, el = document) => el.querySelector(s);
 const store = {
@@ -204,7 +204,7 @@ function showView(hash, scroll = true) {
     const on = t?.closest('[data-view]') === view;
     a.classList.toggle('on', on); on ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current');
   });
-  document.documentElement.dataset.view = view.id;
+  document.documentElement.dataset.page = view.id;
   document.dispatchEvent(new CustomEvent('viewchange', { detail: view.id }));
   if (!scroll) return;
   if (target === view) scrollTo({ top: 0 }); else target.scrollIntoView({ block: id.startsWith('n-') ? 'center' : 'start' });
@@ -270,4 +270,4 @@ async function load() {
 }
 
 initPrefs(); initTips(); initControls(); initRutina(); initInicio(); initNav(); initChat(); initDiario(); initGuia(); load();
-import('./nerve.js?v=14').then((m) => m.mountNerve($('#nerve'))).catch(() => {});
+import('./nerve.js?v=15').then((m) => m.mountNerve($('#nerve'))).catch(() => {});

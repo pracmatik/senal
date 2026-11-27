@@ -323,7 +323,7 @@ h1, h2, h3 { font-family: var(--display); font-weight: 650; letter-spacing: -.02
 .bar { border-bottom-color: transparent; }
 .brand { font-family: var(--display); font-weight: 800; letter-spacing: -.03em; }
 #nerve { transition: opacity .8s var(--ease); opacity: .1; }
-:root[data-view="inicio"] #nerve { opacity: .32; }
+:root[data-page="inicio"] #nerve { opacity: .32; }
 .view { animation: viewIn .45s var(--ease) both; padding-bottom: 48px; }
 @keyframes viewIn { from { opacity: 0; transform: translateY(10px); } }
 .view > .block:first-child, .view-head { padding-top: clamp(28px, 5vw, 56px); }

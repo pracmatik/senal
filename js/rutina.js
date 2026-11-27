@@ -1,7 +1,7 @@
 // Rutina diaria a medida: elige ejercicios según el tiempo disponible, cómo se encuentra hoy y lo hecho los días anteriores.
 // Perfil fijo de Christian: camina con molestias, dolor fuerte en los pies, permiso médico. Por eso casi todo es sentado o tumbado.
-import { EXERCISES } from './rutina-datos.js?v=14';
-import { animateFigures } from './figura.js?v=14';
+import { EXERCISES } from './rutina-datos.js?v=15';
+import { animateFigures } from './figura.js?v=15';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s = '') => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

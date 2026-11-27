@@ -1,75 +1,19 @@
 // Muñeco 3D de Christian para cada ejercicio. Un solo motor WebGL compartido que pinta en el
 // lienzo de cada ficha visible. Los movimientos viven en movimientos.js.
 import * as THREE from 'three';
-import { MOVES, BASES } from './movimientos.js?v=14';
+import { MOVES, BASES } from './movimientos.js?v=15';
 
 const D = Math.PI / 180;
-const SIZE = 560;
-const COL = { skin: 0xd9a27a, shirt: 0x6b3f86, shorts: 0x2b2540, sock: 0xf1edf6, hair: 0x1a171d, glow: 0xf08a4b };
+const SIZE = 1024;
+const COL = { skin: 0xd9a27a, shirt: 0x6b3f86, shorts: 0x2b2540, sock: 0xf1edf6, sole: 0x4a4458, hair: 0x241c1a, eye: 0x221a1c, lip: 0xa8584f, glow: 0xf08a4b };
 const LEN = { th: 0.42, sh: 0.4, ua: 0.28, fa: 0.25 };
 const REG = ['armL', 'armR', 'handL', 'handR', 'legL', 'legR', 'footL', 'footR', 'torso', 'neck'];
 const GROUPS = { arms: ['armL', 'armR', 'handL', 'handR'], legs: ['legL', 'legR', 'footL', 'footR'], feet: ['footL', 'footR'], hands: ['handL', 'handR'],
   armL: ['armL', 'handL'], armR: ['armR', 'handR'], legL: ['legL', 'footL'], legR: ['legR', 'footR'], all: REG };
 
-let R3, scene, cam, rig, ghost, props, faceTex, shadow, io, raf = 0;
+let R3, scene, cam, rig, ghost, props, shadow, io, raf = 0;
 const entries = new Set();
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-/* ---------- cara ---------- */
-const curls = [[70, 70, 34], [105, 48, 34], [148, 46, 34], [186, 68, 34], [205, 105, 30], [210, 145, 28], [200, 185, 26], [52, 105, 30], [46, 145, 28], [56, 185, 26], [128, 40, 30], [85, 200, 18], [175, 200, 18]];
-const FACE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><circle cx="128" cy="128" r="126" fill="#fff"/>
-<g fill="#1b181f">${curls.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g>
-<g fill="none" stroke="#4a4550" stroke-width="3">${[[78, 66], [118, 46], [160, 52], [192, 96], [60, 128], [200, 150], [64, 176]].map(([x, y]) => `<path d="M${x - 10} ${y + 6}q10-16 20 0"/>`).join('')}</g>
-<ellipse cx="80" cy="142" rx="11" ry="17" fill="#d49a72"/><ellipse cx="176" cy="142" rx="11" ry="17" fill="#d49a72"/>
-<path d="M82 112q0-46 46-46t46 46v40q0 52-46 58t-46-58z" fill="#e3ab82"/>
-<path d="M84 150q4 58 44 60t44-60q-8 20-20 22-12-10-24-8-12-2-24 8-12-2-20-22z" fill="#5b5258" opacity=".9"/>
-<path d="M90 104q14-12 30-4" stroke="#1b181f" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M138 100q16-8 30 4" stroke="#1b181f" stroke-width="7" fill="none" stroke-linecap="round"/>
-<path d="M94 126q12 8 24 0" stroke="#2a2328" stroke-width="5" fill="none" stroke-linecap="round"/>
-<ellipse cx="154" cy="124" rx="12" ry="9" fill="#fff"/><circle cx="152" cy="125" r="6.5" fill="#5a3a22"/><circle cx="150" cy="123" r="2" fill="#fff"/>
-<path d="M126 128q-6 18 2 22" stroke="#b97f5b" stroke-width="4" fill="none" stroke-linecap="round"/>
-<path d="M104 164q24 22 50-2q-24 10-50 2z" fill="#fff" stroke="#7a3b3b" stroke-width="3" stroke-linejoin="round"/></svg>`;
-
-let svgImg;
-function clearBackground(ctx) {
-  // Quita el fondo claro de la foto pintando transparente lo que toca el borde (la cara queda intacta).
-  const im = ctx.getImageData(0, 0, 256, 256), d = im.data, seen = new Uint8Array(256 * 256), stack = [];
-  const light = (i) => d[i * 4 + 3] > 0 && d[i * 4] > 225 && d[i * 4 + 1] > 225 && d[i * 4 + 2] > 225;
-  for (let i = 0; i < 256; i++) stack.push(i, 255 * 256 + i, i * 256, i * 256 + 255);
-  for (let a = 0; a < 256 * 256; a++) if (d[a * 4 + 3] === 0) { seen[a] = 1; [a - 1, a + 1, a - 256, a + 256].forEach((n) => n >= 0 && n < 65536 && stack.push(n)); }
-  while (stack.length) {
-    const i = stack.pop();
-    if (seen[i] || !light(i)) continue;
-    seen[i] = 1; d[i * 4 + 3] = 0;
-    const x = i % 256;
-    if (x > 0) stack.push(i - 1); if (x < 255) stack.push(i + 1); if (i >= 256) stack.push(i - 256); if (i < 65280) stack.push(i + 256);
-  }
-  ctx.putImageData(im, 0, 0);
-}
-function loadFace() {
-  const cv = document.createElement('canvas');
-  cv.width = cv.height = 256;
-  const ctx = cv.getContext('2d');
-  faceTex = new THREE.CanvasTexture(cv);
-  faceTex.colorSpace = THREE.SRGBColorSpace;
-  const draw = (img) => {
-    ctx.clearRect(0, 0, 256, 256);
-    ctx.save(); ctx.beginPath(); ctx.arc(128, 128, 127, 0, Math.PI * 2); ctx.clip();
-    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 256, 256);
-    const s = Math.min(img.naturalWidth, img.naturalHeight);
-    ctx.drawImage(img, (img.naturalWidth - s) / 2, (img.naturalHeight - s) / 2, s, s, 0, 0, 256, 256);
-    ctx.restore();
-    if (img !== svgImg) clearBackground(ctx);
-    faceTex.needsUpdate = true; kick();
-  };
-  let real = false;
-  const svg = new Image();
-  svgImg = svg;
-  svg.onload = () => { if (!real) draw(svg); };
-  svg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(FACE_SVG);
-  const img = new Image();
-  img.onload = () => { real = true; draw(img); };
-  img.src = 'img/cara.png';
-}
 
 /* ---------- cuerpo ---------- */
 function materials(ghostMode) {
@@ -112,15 +56,29 @@ function buildArm(J, side, M) {
   const s = side === 'L' ? 1 : -1, a = 'arm' + side, h = 'hand' + side;
   J['sh' + side] = joint(J.chest, 0.19 * s, 0.2, 0, ball(0.058, M(a, 'shirt')), limb(0.056, 0.05, 0.11, M(a, 'shirt')), limb(0.047, 0.04, LEN.ua, M(a, 'skin')));
   J['el' + side] = joint(J['sh' + side], 0, -LEN.ua, 0, ball(0.041, M(a, 'skin')), limb(0.04, 0.031, LEN.fa, M(a, 'skin')));
-  J['wr' + side] = joint(J['el' + side], 0, -LEN.fa, 0, box(0.07, 0.085, 0.032, M(h, 'skin'), 0, -0.045, 0), ball(0.022, M(h, 'skin'), 0.038 * -s, -0.04, 0.02, 1, 1.6, 1));
-  J['fi' + side] = joint(J['wr' + side], 0, -0.088, 0, box(0.066, 0.07, 0.026, M(h, 'skin'), 0, -0.035, 0));
+  J['wr' + side] = joint(J['el' + side], 0, -LEN.fa, 0, ball(0.042, M(h, 'skin'), 0, -0.045, 0, 0.9, 1.1, 0.42), ball(0.017, M(h, 'skin'), 0.036 * -s, -0.038, 0.016, 1, 1.9, 1));
+  J['fi' + side] = joint(J['wr' + side], 0, -0.088, 0, ball(0.036, M(h, 'skin'), 0, -0.032, 0, 0.95, 1.15, 0.38));
 }
 function buildLeg(J, side, M) {
   const s = side === 'L' ? 1 : -1, l = 'leg' + side, f = 'foot' + side;
   J['hip' + side] = joint(J.pelvis, 0.09 * s, -0.04, 0, ball(0.08, M(l, 'shorts')), limb(0.083, 0.07, 0.2, M(l, 'shorts')), limb(0.072, 0.052, LEN.th, M(l, 'skin')));
   J['kn' + side] = joint(J['hip' + side], 0, -LEN.th, 0, ball(0.054, M(l, 'skin')), limb(0.052, 0.036, LEN.sh, M(l, 'skin')));
-  J['an' + side] = joint(J['kn' + side], 0, -LEN.sh, 0, ball(0.038, M(f, 'sock')), box(0.085, 0.06, 0.15, M(f, 'sock'), 0, -0.032, 0.035));
-  J['to' + side] = joint(J['an' + side], 0, -0.04, 0.11, box(0.085, 0.036, 0.075, M(f, 'sock'), 0, 0.002, 0.035));
+  J['an' + side] = joint(J['kn' + side], 0, -LEN.sh, 0, ball(0.038, M(f, 'sock')), ball(0.055, M(f, 'sock'), 0, -0.028, 0.035, 0.8, 0.62, 1.45), box(0.082, 0.014, 0.15, M(f, 'sole'), 0, -0.058, 0.035));
+  J['to' + side] = joint(J['an' + side], 0, -0.04, 0.11, ball(0.042, M(f, 'sock'), 0, 0.004, 0.03, 1, 0.55, 1.1), box(0.08, 0.014, 0.07, M(f, 'sole'), 0, -0.018, 0.03));
+}
+function buildFace(head, M) {
+  const k = (kind) => M('neck', kind);
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.104, 28, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), k('hair'));
+  cap.position.set(0, 0.112, -0.008); cap.rotation.x = -0.38; cap.scale.set(0.98, 1.04, 1.04);
+  head.add(cap, ball(0.085, k('hair'), 0, 0.09, -0.045, 1.08, 1.05, 0.9));
+  for (const s of [1, -1]) {
+    head.add(ball(0.0115, k('eye'), 0.032 * s, 0.112, 0.091));
+    const brow = box(0.03, 0.007, 0.01, k('hair'), 0.033 * s, 0.135, 0.092); brow.rotation.z = 0.12 * s; head.add(brow);
+    head.add(ball(0.02, k('skin'), 0.088 * s, 0.1, 0.005, 0.5, 1, 0.8));
+  }
+  head.add(ball(0.014, k('skin'), 0, 0.093, 0.104, 1, 1.2, 1));
+  const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.0045, 8, 20, Math.PI), k('lip'));
+  mouth.position.set(0, 0.068, 0.094); mouth.rotation.set(-0.25, 0, Math.PI); head.add(mouth);
 }
 function buildRig(ghostMode) {
   const M = materials(ghostMode);
@@ -131,12 +89,7 @@ function buildRig(ghostMode) {
   J.chest = joint(J.spine, 0, 0.22, 0, ball(0.19, M('torso', 'shirt'), 0, 0.1, 0, 1, 0.95, 0.68));
   J.neck = joint(J.chest, 0, 0.25, 0, limb(0.045, 0.045, 0.09, M('neck', 'skin'), true));
   J.head = joint(J.neck, 0, 0.08, 0, ball(0.1, M('neck', 'skin'), 0, 0.1, 0, 0.9, 1.05, 1));
-  if (!ghostMode) {
-    J.head.add(ball(0.13, M('neck', 'hair'), 0, 0.13, -0.035, 1.05, 1, 0.95));
-    const face = new THREE.Mesh(new THREE.CircleGeometry(0.155, 40), new THREE.MeshBasicMaterial({ map: faceTex, transparent: true }));
-    face.position.set(0, 0.11, 0.115);
-    J.head.add(face);
-  }
+  if (!ghostMode) buildFace(J.head, M);
   for (const s of ['L', 'R']) { buildArm(J, s, M); buildLeg(J, s, M); }
   return { root: J.root, J };
 }
@@ -287,12 +240,12 @@ function init() {
     R3 = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true, powerPreference: 'low-power' });
   } catch { return false; }
   R3.setPixelRatio(1); R3.setSize(SIZE, SIZE, false); R3.setClearColor(0, 0);
+  R3.toneMapping = THREE.ACESFilmicToneMapping; R3.toneMappingExposure = 1.15;
   scene = new THREE.Scene();
   scene.add(new THREE.HemisphereLight(0xfff6ee, 0x6d5f86, 1.7));
   const sun = new THREE.DirectionalLight(0xffffff, 1.8); sun.position.set(2, 4, 3); scene.add(sun);
   const rim = new THREE.DirectionalLight(0xe39bd8, 0.9); rim.position.set(-3, 2, -2); scene.add(rim);
   cam = new THREE.PerspectiveCamera(30, 1, 0.1, 30);
-  loadFace();
   rig = buildRig(false); ghost = buildRig(true);
   scene.add(rig.root, ghost.root);
   const sc = document.createElement('canvas'); sc.width = sc.height = 128;
@@ -319,9 +272,11 @@ function render(e, t) {
   cam.lookAt(c.t[0], c.t[1], c.t[2]);
   shadow.position.set(base.lie ? 0.1 : c.t[0], 0.003, base.lie ? 0 : 0.1);
   shadow.scale.set(base.lie ? 1.6 : 1, base.lie ? 0.7 : 1, 1);
+  const w = e.cv.width;
+  R3.setViewport(0, 0, w, w); R3.setScissor(0, 0, w, w); R3.setScissorTest(true);
   R3.render(scene, cam);
-  e.ctx.clearRect(0, 0, e.cv.width, e.cv.height);
-  e.ctx.drawImage(R3.domElement, 0, 0, e.cv.width, e.cv.height);
+  e.ctx.clearRect(0, 0, w, w);
+  e.ctx.drawImage(R3.domElement, 0, SIZE - w, w, w, 0, 0, w, w);
 }
 function loop(now) {
   raf = 0;
@@ -360,7 +315,8 @@ export function animateFigures(root = document) {
     if (n._fig?.id === n.dataset.fig && n._fig.cv.isConnected) continue;
     const big = !!n.closest('dialog');
     const cv = document.createElement('canvas');
-    cv.width = cv.height = big ? SIZE : 320;
+    const px = Math.round((n.clientWidth || (big ? 420 : 160)) * Math.min(devicePixelRatio || 1, 2.5));
+    cv.width = cv.height = Math.max(240, Math.min(SIZE, px));
     cv.setAttribute('role', 'img');
     cv.setAttribute('aria-label', 'Muñeco que enseña el movimiento. Arrastra para girarlo.');
     n.replaceChildren(cv);
