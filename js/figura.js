@@ -1,41 +1,22 @@
 // Muñeco 3D de Christian para cada ejercicio. Un solo motor WebGL compartido que pinta en el
 // lienzo de cada ficha visible. Los movimientos viven en movimientos.js.
 import * as THREE from 'three';
-import { MOVES, BASES } from './movimientos.js?v=17';
+import { MOVES, BASES } from './movimientos.js?v=21';
+import { loadBody, makeBody, poseBody, setBodyGlow, setBodyZones } from './cuerpo.js?v=22';
 
 const D = Math.PI / 180;
 const SIZE = 1024;
-const COL = { skin: 0xd9a27a, shirt: 0x3a4047, shorts: 0x26292e, sock: 0xeeece6, sole: 0x45484d, hair: 0x241c1a, eye: 0x221a1c, lip: 0xa8584f, glow: 0xf08a4b };
+const COL = { glow: 0xf08a4b };
 const LEN = { th: 0.42, sh: 0.4, ua: 0.28, fa: 0.25 };
 const REG = ['armL', 'armR', 'handL', 'handR', 'legL', 'legR', 'footL', 'footR', 'torso', 'neck'];
 const GROUPS = { arms: ['armL', 'armR', 'handL', 'handR'], legs: ['legL', 'legR', 'footL', 'footR'], feet: ['footL', 'footR'], hands: ['handL', 'handR'],
   armL: ['armL', 'handL'], armR: ['armR', 'handR'], legL: ['legL', 'footL'], legR: ['legR', 'footR'], all: REG };
 
-let R3, scene, cam, rig, ghost, props, shadow, io, raf = 0;
+let R3, scene, cam, rig, ghost, body, ghostBody, props, shadow, io, raf = 0;
 const entries = new Set();
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* ---------- cuerpo ---------- */
-function materials(ghostMode) {
-  if (ghostMode) {
-    const g = new THREE.MeshBasicMaterial({ color: COL.glow, transparent: true, opacity: 0.16, depthWrite: false });
-    return () => g;
-  }
-  const made = {};
-  return (reg, kind) => {
-    const key = reg + kind;
-    if (!made[key]) {
-      made[key] = new THREE.MeshStandardMaterial({ color: COL[kind], roughness: kind === 'shirt' ? 0.85 : 0.6 });
-      made[key].userData.reg = reg;
-    }
-    return made[key];
-  };
-}
-function limb(r1, r2, len, m, up = false) {
-  const g = new THREE.CylinderGeometry(r2, r1, len, 18, 1, true);
-  g.translate(0, up ? len / 2 : -len / 2, 0);
-  return new THREE.Mesh(g, m);
-}
+/* ---------- esqueleto invisible: la persona (cuerpo.js) lo copia ---------- */
 function ball(r, m, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1) {
   const o = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 14), m);
   o.position.set(x, y, z); o.scale.set(sx, sy, sz); return o;
@@ -52,39 +33,25 @@ function joint(parent, x, y, z, ...kids) {
   return j;
 }
 
-function buildArm(J, side, M) {
-  const s = side === 'L' ? 1 : -1, a = 'arm' + side, h = 'hand' + side;
-  J['sh' + side] = joint(J.chest, 0.19 * s, 0.2, 0, ball(0.058, M(a, 'shirt')), limb(0.056, 0.05, 0.11, M(a, 'shirt')), limb(0.047, 0.04, LEN.ua, M(a, 'skin')));
-  J['el' + side] = joint(J['sh' + side], 0, -LEN.ua, 0, ball(0.041, M(a, 'skin')), limb(0.04, 0.031, LEN.fa, M(a, 'skin')));
-  J['wr' + side] = joint(J['el' + side], 0, -LEN.fa, 0, ball(0.042, M(h, 'skin'), 0, -0.045, 0, 0.9, 1.1, 0.42), ball(0.017, M(h, 'skin'), 0.036 * -s, -0.038, 0.016, 1, 1.9, 1));
-  J['fi' + side] = joint(J['wr' + side], 0, -0.088, 0, ball(0.036, M(h, 'skin'), 0, -0.032, 0, 0.95, 1.15, 0.38));
+function buildArm(J, side) {
+  const s = side === 'L' ? 1 : -1;
+  J['sh' + side] = joint(J.chest, 0.19 * s, 0.16, 0);
+  J['el' + side] = joint(J['sh' + side], 0, -LEN.ua, 0);
+  J['wr' + side] = joint(J['el' + side], 0, -LEN.fa, 0);
+  J['fi' + side] = joint(J['wr' + side], 0, -0.088, 0);
 }
-function buildLeg(J, side, M) {
-  const s = side === 'L' ? 1 : -1, l = 'leg' + side, f = 'foot' + side;
-  J['hip' + side] = joint(J.pelvis, 0.09 * s, -0.04, 0, ball(0.08, M(l, 'shorts')), limb(0.083, 0.07, 0.2, M(l, 'shorts')), limb(0.072, 0.052, LEN.th, M(l, 'skin')));
-  J['kn' + side] = joint(J['hip' + side], 0, -LEN.th, 0, ball(0.054, M(l, 'skin')), limb(0.052, 0.036, LEN.sh, M(l, 'skin')));
-  J['an' + side] = joint(J['kn' + side], 0, -LEN.sh, 0, ball(0.038, M(f, 'sock')), ball(0.055, M(f, 'sock'), 0, -0.028, 0.035, 0.8, 0.62, 1.45), box(0.082, 0.014, 0.15, M(f, 'sole'), 0, -0.058, 0.035));
-  J['to' + side] = joint(J['an' + side], 0, -0.04, 0.11, ball(0.042, M(f, 'sock'), 0, 0.004, 0.03, 1, 0.55, 1.1), box(0.08, 0.014, 0.07, M(f, 'sole'), 0, -0.018, 0.03));
-}
-function buildFace(head, M) {
-  const k = (kind) => M('neck', kind);
-  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.104, 28, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), k('hair'));
-  cap.position.set(0, 0.112, -0.008); cap.rotation.x = -0.38; cap.scale.set(0.98, 1.04, 1.04);
-  head.add(cap, ball(0.085, k('hair'), 0, 0.09, -0.045, 1.08, 1.05, 0.9));
-  for (const s of [1, -1]) {
-    head.add(ball(0.0115, k('eye'), 0.032 * s, 0.112, 0.091));
-    const brow = box(0.03, 0.007, 0.01, k('hair'), 0.033 * s, 0.135, 0.092); brow.rotation.z = 0.12 * s; head.add(brow);
-    head.add(ball(0.02, k('skin'), 0.088 * s, 0.1, 0.005, 0.5, 1, 0.8));
-  }
-  head.add(ball(0.014, k('skin'), 0, 0.093, 0.104, 1, 1.2, 1));
-  const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.0045, 8, 20, Math.PI), k('lip'));
-  mouth.position.set(0, 0.068, 0.094); mouth.rotation.set(-0.25, 0, Math.PI); head.add(mouth);
+function buildLeg(J, side) {
+  const s = side === 'L' ? 1 : -1;
+  J['hip' + side] = joint(J.pelvis, 0.09 * s, -0.04, 0);
+  J['kn' + side] = joint(J['hip' + side], 0, -LEN.th, 0);
+  J['an' + side] = joint(J['kn' + side], 0, -LEN.sh, 0);
+  J['to' + side] = joint(J['an' + side], 0, -0.04, 0.11);
 }
 /* ---------- zonas del mapa de dolor ---------- */
 // Cada zona es un volumen transparente pegado a una articulación del muñeco: sirve para tocar y, si se pinta, para brillar.
 // [articulación, centro x y z, radios x y z]. La x se espeja en el lado derecho. Las zonas con lado llevan -i o -d.
 const ZS = {
-  cuello: ['neck', 0, 0.04, 0.004, 0.062, 0.07, 0.062],
+  cuello: ['neck', 0, 0.04, 0.012, 0.075, 0.085, 0.075],
   'espalda-alta': ['chest', 0, 0.12, -0.085, 0.15, 0.12, 0.075],
   lumbar: ['spine', 0, 0.1, -0.1, 0.125, 0.1, 0.075],
   hombro: ['sh', 0.012, 0, 0, 0.082, 0.082, 0.082],
@@ -105,25 +72,23 @@ function buildZones(J) {
   for (const id of ZONE_IDS) {
     const side = id.endsWith('-i') ? 'L' : id.endsWith('-d') ? 'R' : '', k = side ? id.slice(0, -2) : id;
     const [jn, x, y, z, rx, ry, rz] = ZS[k], s = side === 'R' ? -1 : 1;
-    const m = new THREE.Mesh(ZGEO, new THREE.MeshBasicMaterial({ color: 0xd8232a, transparent: true, opacity: 0.7, depthWrite: false, toneMapped: false }));
+    const m = new THREE.Mesh(ZGEO, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
     m.position.set(x * s, y, z); m.scale.set(rx, ry, rz);
-    m.visible = false; m.renderOrder = 3; m.userData.zone = id;
+    m.visible = false; m.userData.zone = id;
     J[jn + side].add(m); out.push(m);
   }
   return out;
 }
-function buildRig(ghostMode) {
-  const M = materials(ghostMode);
+function buildRig(withZones) {
   const J = { root: new THREE.Group() };
   J.root.rotation.order = 'YXZ';
-  J.pelvis = joint(J.root, 0, 0, 0, ball(0.17, M('torso', 'shorts'), 0, 0, 0, 1, 0.7, 0.75));
-  J.spine = joint(J.pelvis, 0, 0.07, 0, limb(0.15, 0.145, 0.24, M('torso', 'shirt'), true));
-  J.chest = joint(J.spine, 0, 0.22, 0, ball(0.19, M('torso', 'shirt'), 0, 0.1, 0, 1, 0.95, 0.68));
-  J.neck = joint(J.chest, 0, 0.25, 0, limb(0.045, 0.045, 0.09, M('neck', 'skin'), true));
-  J.head = joint(J.neck, 0, 0.08, 0, ball(0.1, M('neck', 'skin'), 0, 0.1, 0, 0.9, 1.05, 1));
-  if (!ghostMode) buildFace(J.head, M);
-  for (const s of ['L', 'R']) { buildArm(J, s, M); buildLeg(J, s, M); }
-  return { root: J.root, J, zones: ghostMode ? [] : buildZones(J) };
+  J.pelvis = joint(J.root, 0, 0, 0);
+  J.spine = joint(J.pelvis, 0, 0.07, 0);
+  J.chest = joint(J.spine, 0, 0.22, 0);
+  J.neck = joint(J.chest, 0, 0.25, 0);
+  J.head = joint(J.neck, 0, 0.08, 0);
+  for (const s of ['L', 'R']) { buildArm(J, s); buildLeg(J, s); }
+  return { root: J.root, J, zones: withZones ? buildZones(J) : [] };
 }
 
 /* ---------- postura ---------- */
@@ -147,9 +112,6 @@ function applyTrunk(J, p) {
   J.pelvis.position.set(P[0], P[1], P[2]);
   J.pelvis.rotation.set(num(pl, 0) * D, num(pl, 2) * D, -num(pl, 1) * D);
   for (const [k, j] of [['sp', J.spine], ['ch', J.chest], ['nk', J.neck]]) j.rotation.set(num(p[k], 0) * D, num(p[k], 2) * D, -num(p[k], 1) * D);
-  const br = p.br || 0;
-  J.chest.scale.setScalar(1 + br * 0.05);
-  J.pelvis.children[0].scale.set(1 + br * 0.06, 0.7, 0.75 + br * 0.12);
 }
 const EU = new THREE.Euler(), QE = new THREE.Quaternion(), UPV = new THREE.Vector3(0, 1, 0);
 function applyLimbs(J, p, S) {
@@ -243,10 +205,11 @@ function placeProps(m, J) {
     if (at) o.position.set(at[0], at[1], at[2]); else o.position.copy(o.userData.home);
     o.rotation.y = at?.[3] !== undefined ? at[3] * D : o.userData.rotY;
   }
-  if (on.has('ball')) J.fiR.getWorldPosition(props.ball.position);
+  // lo que se coge va en la palma, no en los nudillos
+  if (on.has('ball')) J.wrR.localToWorld(props.ball.position.set(0, -0.075, -0.045));
   if (on.has('bottle')) for (const S of ['L', 'R']) {
     const b = props['bottle' + S];
-    J['fi' + S].getWorldPosition(b.position); J['wr' + S].getWorldQuaternion(b.quaternion); b.rotateX(Math.PI / 2);
+    J['wr' + S].localToWorld(b.position.set(0, -0.08, -0.034)); J['wr' + S].getWorldQuaternion(b.quaternion); b.rotateZ(Math.PI / 2);
   }
   if (on.has('towel')) {
     J.toL.getWorldPosition(A); J.fiL.getWorldPosition(B); J.fiR.getWorldPosition(C); B.add(C).multiplyScalar(0.5);
@@ -257,24 +220,33 @@ function placeProps(m, J) {
 }
 function setGlow(hi, t) {
   const want = new Set((hi || []).flatMap((h) => GROUPS[h] || [h]));
-  const k = 0.3 + 0.25 * Math.sin(t / 260);
-  rig.root.traverse((o) => {
-    const reg = o.material?.userData?.reg;
-    if (!reg) return;
-    const on = want.has(reg);
-    o.material.emissive.setHex(on ? COL.glow : 0); o.material.emissiveIntensity = on ? k : 0;
-  });
+  setBodyGlow(want, 0.3 + 0.25 * Math.sin(t / 260));
 }
 
 // Zonas del mapa de dolor: solo se ven las que esta ficha pide. paint = { zona: { c: color, o: opacidad, p: late } }
 function paintZones(paint, t) {
+  const list = [];
   for (const m of rig.zones) {
     const z = paint?.[m.userData.zone];
-    m.visible = !!z;
-    if (z) { m.material.color.setHex(z.c); m.material.opacity = z.o * (z.p && !still ? 0.85 + 0.15 * Math.sin(t / 230) : 1); }
+    if (z) list.push({ mesh: m, color: z.c, opacity: z.o * (z.p && !still ? 0.85 + 0.15 * Math.sin(t / 230) : 1) });
   }
+  setBodyZones(list);
 }
 
+// La persona tarda un momento en bajar. Si no llega, se avisa en cada ficha y en la consola.
+let failed = false;
+function addPeople() {
+  loadBody().then((src) => {
+    body = makeBody(src);
+    ghostBody = makeBody(src, new THREE.MeshBasicMaterial({ color: COL.glow, transparent: true, opacity: 0.1, depthWrite: false }));
+    scene.add(body.root, ghostBody.root);
+    kick();
+  }).catch((err) => {
+    console.error('No se ha podido cargar la persona 3D', err);
+    failed = true;
+    for (const e of entries) e.box.classList.add('fig-off');
+  });
+}
 function init() {
   if (R3) return true;
   try {
@@ -287,8 +259,9 @@ function init() {
   const sun = new THREE.DirectionalLight(0xffffff, 1.8); sun.position.set(2, 4, 3); scene.add(sun);
   const rim = new THREE.DirectionalLight(0xdfe4f2, 0.9); rim.position.set(-3, 2, -2); scene.add(rim);
   cam = new THREE.PerspectiveCamera(30, 1, 0.1, 30);
-  rig = buildRig(false); ghost = buildRig(true);
+  rig = buildRig(true); ghost = buildRig(false);
   scene.add(rig.root, ghost.root);
+  addPeople();
   const sc = document.createElement('canvas'); sc.width = sc.height = 128;
   const g = sc.getContext('2d'), gr = g.createRadialGradient(64, 64, 4, 64, 64, 64);
   gr.addColorStop(0, 'rgba(20,23,26,.32)'); gr.addColorStop(1, 'rgba(20,23,26,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
@@ -302,11 +275,13 @@ function init() {
 // Colocar el muñeco y la cámara como los pide esta ficha (sirve para pintar y para saber qué se toca)
 function prepare(e, t) {
   const { m, base, f, pk } = frames(e.id);
-  const p = still ? f[pk] : poseAt(e.id, t);
+  const raw = still ? f[pk] : poseAt(e.id, t), held = m.pr?.includes('bottle') ? ['fL', 'fR'] : m.pr?.includes('ball') ? ['fR'] : [];
+  const p = { ...Object.fromEntries(held.map((k) => [k, 42])), ...raw };
   applyPose(rig.J, p);
   rig.root.updateMatrixWorld(true);
-  ghost.root.visible = f.length > 1 && m.ghost !== false;
-  if (ghost.root.visible) applyPose(ghost.J, f[pk]);
+  const withGhost = f.length > 1 && m.ghost !== false;
+  if (body) { poseBody(body, rig.J, p); ghostBody.root.visible = withGhost; }
+  if (body && withGhost) { applyPose(ghost.J, f[pk]); ghost.root.updateMatrixWorld(true); poseBody(ghostBody, ghost.J, f[pk]); }
   setGlow(p.hi ?? m.hi, t);
   paintZones(e.paint, t);
   placeProps(m, rig.J);
@@ -318,6 +293,7 @@ function prepare(e, t) {
   e.t = t;
 }
 function render(e, t) {
+  if (!body) { e.dirty = true; return; }
   prepare(e, t);
   const w = e.cv.width;
   R3.setViewport(0, 0, w, w); R3.setScissor(0, 0, w, w); R3.setScissorTest(true);
@@ -353,7 +329,7 @@ function draggable(e) {
 export function animateFigures(root = document) {
   const nodes = root.querySelectorAll('[data-fig]');
   if (!nodes.length) return;
-  if (!init()) { nodes.forEach((n) => n.classList.add('fig-off')); return; }
+  if (failed || !init()) { nodes.forEach((n) => n.classList.add('fig-off')); return; }
   io ??= new IntersectionObserver((list) => {
     for (const it of list) if (it.target._fig) it.target._fig.vis = it.isIntersecting;
     kick();
@@ -392,22 +368,25 @@ const RAY = new THREE.Raycaster(), NDC = new THREE.Vector2(), PT = new THREE.Vec
 // si el dedo cae un poco al lado, se coge la zona visible más cercana dentro de 24 píxeles.
 export function pickZone(node, clientX, clientY) {
   const e = node._fig;
-  if (!e || !R3) return null;
+  if (!e || !body) return null;
   prepare(e, e.t || 0);
   cam.updateMatrixWorld();
   const r = e.cv.getBoundingClientRect(), px = clientX - r.left, py = clientY - r.top;
-  const meshes = [];
-  rig.root.traverse((o) => { if (o.isMesh) meshes.push(o); });
-  const first = (x, y) => { NDC.set(x, y); RAY.setFromCamera(NDC, cam); return RAY.intersectObjects(meshes, false)[0]; };
-  const hit = first((px / r.width) * 2 - 1, -(py / r.height) * 2 + 1);
-  if (hit?.object.userData.zone) return hit.object.userData.zone;
+  for (const sm of body.meshes) { sm.computeBoundingSphere(); sm.computeBoundingBox(); }
+  // La zona tocada es la primera que hay justo debajo de la piel que se ve (no una de la otra cara del cuerpo)
+  const zoneAt = (x, y) => {
+    NDC.set(x, y); RAY.setFromCamera(NDC, cam);
+    const skin = RAY.intersectObjects(body.meshes, false)[0];
+    const zone = RAY.intersectObjects(rig.zones, false)[0];
+    return zone && (!skin || zone.distance < skin.distance + 0.075) ? zone.object.userData.zone : null;
+  };
+  const direct = zoneAt((px / r.width) * 2 - 1, -(py / r.height) * 2 + 1);
+  if (direct) return direct;
   let best = null, bd = 24;
   for (const m of rig.zones) {
     m.getWorldPosition(PT).project(cam);
     const d = Math.hypot((PT.x + 1) / 2 * r.width - px, (1 - PT.y) / 2 * r.height - py);
-    if (d >= bd) continue;
-    const h = first(PT.x, PT.y);          // ¿se ve esa zona, o la tapa el cuerpo?
-    if (h?.object === m) { best = m.userData.zone; bd = d; }
+    if (d < bd && zoneAt(PT.x, PT.y) === m.userData.zone) { best = m.userData.zone; bd = d; }
   }
   return best;
 }
@@ -415,7 +394,7 @@ export function pickZone(node, clientX, clientY) {
 // Foto del muñeco tal como está ahora, para el resumen que se imprime
 export function snapshotFigure(node) {
   const e = node._fig;
-  if (!e || !R3) return '';
+  if (!e || !body) return '';
   render(e, e.t || 0);
   try { return e.cv.toDataURL('image/png'); } catch { return ''; }
 }

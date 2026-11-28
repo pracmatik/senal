@@ -974,3 +974,7 @@ fieldset legend { font-weight: 700; }
 /* Texto pequeño en acento: un tono más hondo para que se lea igual sobre cualquier fotograma del vídeo */
 a, .mn-topic, .item-topic, .item-date .new, .alerts .new-tag, .trial .where b, .r-sum strong, .c-big b, .r-body summary { color: var(--accent-text); }
 .r-body summary { text-decoration-color: var(--accent-text); }
+
+/* si la persona 3D no llega, se dice; nada de huecos en blanco */
+[data-fig].fig-off:not(.pm-fig) canvas { display: none; }
+[data-fig].fig-off:not(.pm-fig)::after { content: "No se ha podido cargar el muñeco. Recarga la página."; display: block; padding: 12px; font-size: .85rem; text-align: center; }

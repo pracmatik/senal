@@ -1,7 +1,7 @@
 // Portada: saludo según la hora, cómo te encuentras, rutina de hoy, consejo del día y diario
 import { TIPS, EXERCISES } from './rutina-datos.js?v=17';
-import { todaySummary } from './rutina.js?v=18';
-import { animateFigures } from './figura.js?v=18';
+import { todaySummary } from './rutina.js?v=23';
+import { animateFigures } from './figura.js?v=23';
 
 const $ = (s, el = document) => el.querySelector(s);
 const store = {

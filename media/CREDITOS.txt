@@ -6,3 +6,6 @@ rutina   pexels.com/video/37272881
 diario   pexels.com/video/11265968
 noticias pexels.com/video/34914524 (color cambiado a azul)
 aprender pexels.com/video/39494117
+
+Persona 3D (media/persona.glb): creada con Blender y el complemento MPFB (MakeHuman Community), recursos del paquete
+makehuman_system_assets con licencia CC0. Se vuelve a generar con scripts/build_human.py (la ropa, con scripts/ropa.py).

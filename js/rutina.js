@@ -2,7 +2,7 @@
 // las zonas que Christian quiere trabajar y el dolor que apunta en el mapa del diario.
 // Perfil fijo de Christian: camina con molestias, dolor fuerte en los pies, permiso médico. Por eso casi todo es sentado o tumbado.
 import { EXERCISES } from './rutina-datos.js?v=17';
-import { animateFigures } from './figura.js?v=18';
+import { animateFigures } from './figura.js?v=23';
 import { TRAIN, TRAIN_BY, PAIN_BY, zoneName, painToday } from './zonas.js?v=17';
 
 const $ = (s, el = document) => el.querySelector(s);

@@ -1,7 +1,7 @@
 // Mapa de dolor en el muñeco: se toca una zona (o se elige en la lista), se cuenta cómo es y se guarda en el diario.
 // Debajo, resumen de los últimos días con las zonas teñidas según los días que han dolido.
 import { getBody, saveBody, allDiary, setBodyPicture, PAIN } from './diario.js?v=17';
-import { animateFigures, paintFigure, pickZone, turnFigure, figureYaw, snapshotFigure } from './figura.js?v=18';
+import { animateFigures, paintFigure, pickZone, turnFigure, figureYaw, snapshotFigure } from './figura.js?v=23';
 import { PAIN_ZONES, PAIN_BY, PAIN_GROUPS, KINDS, CAUSES, PAIN_LIMIT, zoneName, bodyStats, bodyLines, kindSplit } from './zonas.js?v=17';
 
 const $ = (s, el = document) => el.querySelector(s);

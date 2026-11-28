@@ -1,11 +1,11 @@
 import { initChat } from './chat.js';
 import { BASE_GLOSSARY } from './glossary.js';
 import { initDiario } from './diario.js?v=17';
-import { initDolor } from './dolor.js?v=18';
+import { initDolor } from './dolor.js?v=23';
 import { initGuia } from './guia-ui.js?v=12';
 import { isImportant } from './avisos-regla.js?v=12';
-import { initRutina } from './rutina.js?v=18';
-import { initInicio } from './inicio.js?v=18';
+import { initRutina } from './rutina.js?v=23';
+import { initInicio } from './inicio.js?v=23';
 import { initFondo } from './fondo.js?v=18';
 
 const $ = (s, el = document) => el.querySelector(s);
